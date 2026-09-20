@@ -1367,6 +1367,45 @@ textarea {
   }
 }
 
+/* Calm the opening down: product architecture, not a security console. */
+.hero-copy:before { display: none; }
+.hero h1 { max-width: 700px; }
+.hero-visual { display: grid; align-content: center; }
+.hero-summary {
+  width: min(100%, 590px);
+  margin-left: auto;
+  border: 1px solid #393940;
+  background: #111114;
+}
+.hero-summary-head,
+.hero-summary-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  color: #9b9ba3;
+  font: 10px "DM Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.hero-summary-head { border-bottom: 1px solid #303037; }
+.hero-summary-head span:first-child { color: var(--yellow); }
+.hero-summary-foot { border-top: 1px solid #303037; color: #75757e; }
+.hero-summary-intro { padding: 31px 30px 25px; border-bottom: 1px solid #303037; }
+.hero-summary-intro p { margin: 0 0 9px; color: #a3a3ab; font: 10px "DM Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+.hero-summary-intro h2 { margin: 0; max-width: 420px; color: #f4f4f1; font-size: clamp(27px, 2.6vw, 38px); letter-spacing: -.055em; line-height: 1.08; }
+.hero-summary-list { margin: 0; }
+.hero-summary-list div { display: grid; grid-template-columns: 105px 1fr; gap: 18px; padding: 17px 30px; border-bottom: 1px solid #303037; }
+.hero-summary-list div:last-child { border-bottom: 0; }
+.hero-summary-list dt { color: var(--yellow); font: 10px "DM Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+.hero-summary-list dd { margin: 0; color: #c5c5cc; font-size: 13px; line-height: 1.5; }
+@media (max-width: 800px) {
+  .hero-summary { margin: 0; }
+  .hero-summary-head { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .hero-summary-list div { grid-template-columns: 1fr; gap: 4px; padding: 16px 22px; }
+  .hero-summary-intro { padding: 25px 22px 21px; }
+}
+
 /* ── Responsive: Mobile (≤ 440px) ───────────────────────── */
 @media (max-width: 440px) {
   h1 {
@@ -2608,6 +2647,15 @@ footer {
   column-gap: 36px;
   row-gap: 12px;
   max-width: 900px;
+}
+.brand-icon {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+}
+footer .brand-icon {
+  width: 21px;
+  height: 21px;
 }
 .terms-page .terms-meta span + span {
   padding-left: 0;

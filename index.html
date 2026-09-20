@@ -14,9 +14,8 @@
   <body>
     <header class="site-header">
       <a class="brand" href="/" aria-label="Spark Education Technology home"
-        ><span class="bolt" aria-hidden="true">ϟ</span
-        ><span>Spark<span class="brand-light">.edu</span></span
-      ></a>
+        ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
+        ><span>Spark</span></a>
       <button
         class="menu-toggle"
         aria-label="Toggle navigation"
@@ -35,15 +34,14 @@
       <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow">
-            <span class="pulse"></span> K–12 network security / live
+            <span class="pulse"></span> K–12 browser safety
           </p>
-          <h1>Student safety doesn't stop at a <em>blocklist.</em></h1>
+          <h1>More context for <em>safer learning.</em></h1>
           <p class="lead">
-            Spark Filter is a browser-native detection runtime for schools. It
-            recognizes the proxy and game behavior that domain blocklists
-            cannot see.
+            Spark Filter helps districts identify browser games and proxy tools
+            through local, browser-native analysis.
           </p>
-          <div class="hero-proof"><span>Chrome MV3 + ChromeOS</span><i></i><span>Rust → WebAssembly runtime</span></div>
+          <div class="hero-proof"><span>Chrome + ChromeOS</span><i></i><span>Managed deployment</span><i></i><span>Local analysis</span></div>
           <div class="actions">
             <a class="button button-primary" href="/contact/"
               >Request a demo <span>→</span></a
@@ -52,14 +50,17 @@
             >
           </div>
         </div>
-        <div class="hero-visual" aria-label="Illustration of Spark detection activity">
-          <div class="signal-board">
-            <div class="signal-board-head"><span><i></i> Detection session</span><small>Chrome debugger attached</small></div>
-            <div class="signal-board-main"><div class="signal-stat"><small>Verdict</small><strong>✓</strong><span>Proxy runtime identified</span></div><div class="signal-chart signal-evidence" aria-hidden="true"><span style="height:28%"></span><span style="height:52%"></span><span style="height:38%"></span><span style="height:72%"></span><span style="height:94%"></span><span style="height:68%"></span><span style="height:78%"></span><span style="height:90%"></span></div></div>
-            <div class="signal-events"><div><b>Runtime</b><span>Scramjet / inline proxy</span><em>Matched</em></div><div><b>Signals</b><span>Frames · scripts · resources</span><em>Observed</em></div><div><b>Policy</b><span>Managed block rules applied</span><em>Blocked</em></div></div>
-            <div class="signal-board-foot"><span>Local detector decision</span><strong>View explanation <b>→</b></strong></div>
+        <div class="hero-visual" aria-label="Overview of Spark Filter browser-native protection">
+          <div class="hero-summary">
+            <div class="hero-summary-head"><span>Spark Filter</span><span>Browser-native protection</span></div>
+            <div class="hero-summary-intro"><p>Built for district environments</p><h2>Understand behavior, not just destinations.</h2></div>
+            <dl class="hero-summary-list">
+              <div><dt>Observes</dt><dd>Frames, scripts, resources, and runtime behavior</dd></div>
+              <div><dt>Identifies</dt><dd>Modern proxy runtimes and browser-game activity</dd></div>
+              <div><dt>Applies</dt><dd>Local decisions aligned with district policy</dd></div>
+            </dl>
+            <div class="hero-summary-foot">Designed for managed Chrome environments</div>
           </div>
-          <div class="signal-stamp"><span>WebAssembly</span><strong>Observe behavior,<br />not just domains.</strong></div>
         </div>
         <div class="hero-foot">
           <span>Deploy in minutes</span><span>Chrome 125+</span><span>ChromeOS</span><span>Admin managed</span>
@@ -286,9 +287,8 @@
     </main>
     <footer>
       <a class="brand" href="/"
-        ><span class="bolt">ϟ</span
-        ><span>Spark<span class="brand-light">.edu</span></span
-      ></a>
+        ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
+        ><span>Spark</span></a>
       <p>© 2026 Spark Education Technology</p>
       <div>
         <a href="/privacy/">Privacy Policy</a
