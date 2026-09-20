@@ -1,15 +1,9 @@
-<<<<<<< HEAD
 const toggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector(".nav");
-=======
-const toggle = document.querySelector('.menu-toggle');
-const nav = document.querySelector('.nav');
-
->>>>>>> c3c84c873d531c1a0f146641fe16cd11fe8c3098
 if (toggle && nav) {
   toggle.addEventListener("click", () => {
     const open = nav.classList.toggle("open");
-    toggle.setAttribute("aria-expanded", open);
+    toggle.setAttribute("aria-expanded", String(open));
     toggle.textContent = open ? "Close" : "Menu";
   });
 }
@@ -39,68 +33,6 @@ if (contactForm) {
       status.textContent =
         error.message || "Something went wrong. Please email us directly.";
       status.classList.add("is-error");
-    } finally {
-      submitButton.disabled = false;
-    }
-  });
-}
-
-const contactForm = document.querySelector('[data-contact-form]');
-
-if (contactForm) {
-  console.log('Contact form found');
-
-  const status = contactForm.querySelector('.form-status');
-  const submitButton = contactForm.querySelector('button[type="submit"]');
-
-  contactForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    console.log('Contact form submitting');
-
-    submitButton.disabled = true;
-    status.textContent = 'Sending your request…';
-    status.className = 'form-status';
-
-    const formData = Object.fromEntries(new FormData(contactForm));
-
-    console.log('Form data:', formData);
-
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      console.log('API response:', response.status);
-
-      const result = await response.json();
-
-      console.log('API result:', result);
-
-      if (!response.ok) {
-        throw new Error(
-          result.error || 'Unable to send your request.'
-        );
-      }
-
-      contactForm.reset();
-
-      status.textContent = 'Thanks—we’ll be in touch shortly.';
-      status.classList.add('is-success');
-
-    } catch (error) {
-      console.error('Contact form error:', error);
-
-      status.textContent =
-        error.message ||
-        'Something went wrong. Please email us directly.';
-
-      status.classList.add('is-error');
-
     } finally {
       submitButton.disabled = false;
     }
