@@ -2602,7 +2602,17 @@ footer {
   display: none;
 }
 /* The longer legal metadata line intentionally wraps instead of colliding. */
-.terms-page .terms-meta{flex-wrap:wrap;row-gap:10px}
+.terms-page .terms-meta {
+  display: grid;
+  grid-template-columns: minmax(210px, .55fr) minmax(320px, 1.45fr);
+  column-gap: 36px;
+  row-gap: 12px;
+  max-width: 900px;
+}
+.terms-page .terms-meta span + span {
+  padding-left: 0;
+  border-left: 0;
+}
 
 /* A sober product-evidence treatment for the platform section. */
 .solution {
@@ -2663,6 +2673,7 @@ footer {
   line-height: 1.7;
 }
 @media (max-width: 800px) {
+  .terms-page .terms-meta { display: block; }
   .evidence-grid { grid-template-columns: 1fr; }
   .evidence-grid article { min-height: 0; padding: 24px; border-right: 0; border-bottom: 1px solid #303037; }
   .evidence-grid article:last-child { border-bottom: 0; }
