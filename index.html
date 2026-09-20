@@ -15,7 +15,7 @@
     <header class="site-header">
       <a class="brand" href="/" aria-label="Spark Education Technology home"
         ><span class="bolt" aria-hidden="true">ϟ</span
-        ><span>Spark<span class="brand-light"></span></span
+        ><span>Spark<span class="brand-light">.edu</span></span
       ></a>
       <button
         class="menu-toggle"
@@ -32,17 +32,18 @@
     </header>
 
     <main>
-      <section class="hero grid-bg">
+      <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow">
-            <span class="pulse"></span> Security built for today's web
+            <span class="pulse"></span> K–12 network security / live
           </p>
-          <h1>Sparking your <em>education.</em></h1>
+          <h1>Student safety doesn't stop at a <em>blocklist.</em></h1>
           <p class="lead">
-            Spark gives K–12 districts a clear view of modern bypass
-            attempts—and stops them before students leave the learning
-            environment.
+            Spark Filter is a browser-native detection runtime for schools. It
+            recognizes the proxy and game behavior that domain blocklists
+            cannot see.
           </p>
+          <div class="hero-proof"><span>Chrome MV3 + ChromeOS</span><i></i><span>Rust → WebAssembly runtime</span></div>
           <div class="actions">
             <a class="button button-primary" href="/contact/"
               >Request a demo <span>→</span></a
@@ -51,28 +52,17 @@
             >
           </div>
         </div>
-        <div class="hero-visual" aria-hidden="true">
-          <div class="radar">
-            <div class="radar-ring r1"></div>
-            <div class="radar-ring r2"></div>
-            <div class="radar-ring r3"></div>
-            <div class="scan-line"></div>
-            <i class="signal s1"></i><i class="signal s2"></i
-            ><i class="signal s3"></i>
-            <div class="radar-center">ϟ</div>
+        <div class="hero-visual" aria-label="Illustration of Spark detection activity">
+          <div class="signal-board">
+            <div class="signal-board-head"><span><i></i> Detection session</span><small>Chrome debugger attached</small></div>
+            <div class="signal-board-main"><div class="signal-stat"><small>Verdict</small><strong>✓</strong><span>Proxy runtime identified</span></div><div class="signal-chart signal-evidence" aria-hidden="true"><span style="height:28%"></span><span style="height:52%"></span><span style="height:38%"></span><span style="height:72%"></span><span style="height:94%"></span><span style="height:68%"></span><span style="height:78%"></span><span style="height:90%"></span></div></div>
+            <div class="signal-events"><div><b>Runtime</b><span>Scramjet / inline proxy</span><em>Matched</em></div><div><b>Signals</b><span>Frames · scripts · resources</span><em>Observed</em></div><div><b>Policy</b><span>Managed block rules applied</span><em>Blocked</em></div></div>
+            <div class="signal-board-foot"><span>Local detector decision</span><strong>View explanation <b>→</b></strong></div>
           </div>
-          <div class="event-card card-one">
-            <small>LIVE DETECTION</small><strong>Wisp proxy blocked</strong
-            ><span>Student device · 10:42:08</span>
-          </div>
-          <div class="event-card card-two">
-            <small>NETWORK HEALTH</small><strong>Protected</strong
-            ><span class="status"><i></i> All systems operational</span>
-          </div>
+          <div class="signal-stamp"><span>WebAssembly</span><strong>Observe behavior,<br />not just domains.</strong></div>
         </div>
         <div class="hero-foot">
-          <span>Built for the real internet</span><span class="line"></span
-          ><span>Chrome · Edge · ChromeOS</span>
+          <span>Deploy in minutes</span><span>Chrome 125+</span><span>ChromeOS</span><span>Admin managed</span>
         </div>
       </section>
 
@@ -93,56 +83,56 @@
             </p>
           </div>
         </div>
-        <div class="legacy-row">
-          <span>Built for yesterday</span>
-          <div class="legacy-names">
-            <span>Securly</span><span>GoGuardian</span><span>Lightspeed</span>
+        <div class="gap-scan">
+          <div class="gap-scan-head"><span>What domain filters see</span><span>What Spark observes</span></div>
+          <div class="gap-scan-body">
+            <div class="legacy-side"><span class="blind-label">Known domains</span><span class="blind-label">URL categories</span><span class="blind-label">Static lists</span><p>A new proxy URL can be live in minutes.</p></div>
+            <div class="spark-side"><span class="scan-label">Runtime behavior</span><span class="scan-label">Frame topology</span><span class="scan-label">Resource patterns</span><p>Behavior travels with the bypass.</p></div>
           </div>
-          <span class="faded">Missed modern bypasses</span>
+          <div class="legacy-row"><span>Domain-only protection</span><div class="legacy-names"><span>Wisp</span><span>Bare</span><span>Scramjet</span><span>Ultraviolet</span><span>Rammerhead</span></div><span class="faded">Spark identifies the runtime</span></div>
         </div>
       </section>
 
       <section class="solution section grid-bg" id="solution">
         <div class="section-label">02 / The Spark platform</div>
         <div class="solution-head">
-          <h2>See what legacy filters <em>can't.</em></h2>
+          <h2>Inspect the page <em>from the inside.</em></h2>
           <p>
-            Spark pairs browser-level visibility with network intelligence to
-            recognize the behavior behind a bypass—not just the URL it happens
-            to use today.
+            Spark attaches at the browser level and gives its detector the
+            evidence domain filters never receive: targets, frames, scripts,
+            resources, runtime behavior, and input patterns.
           </p>
         </div>
         <div class="detection-window">
           <div class="window-bar">
             <span></span><span></span><span></span
-            ><b>spark://detection-engine</b><i>● LIVE</i>
+            ><b>spark://wasm-detector</b><i>● SESSION ACTIVE</i>
           </div>
           <div class="window-content">
             <div class="terminal">
               <p>
-                <span class="muted">10:42:08</span> Inspecting encrypted session
-                behavior...
+                <span class="muted">10:42:08</span> CDP attached · target tree synchronized
               </p>
               <p>
                 <span class="muted">10:42:08</span>
-                <span class="warning">!</span> Proxy signature identified
+                <span class="warning">!</span> Runtime evidence cluster identified
               </p>
               <p>
                 <span class="muted">10:42:08</span>
                 <span class="success">✓</span> Matched:
-                <b>Scramjet / inline proxy</b>
+                <b>Scramjet / inline proxy runtime</b>
               </p>
               <p>
-                <span class="muted">10:42:08</span> Policy applied:
+                <span class="muted">10:42:08</span> Managed policy applied:
                 <b>BLOCKED</b>
               </p>
               <p class="cursor">_</p>
             </div>
             <div class="detection-result">
-              <span class="mini-label">THREAT CLASSIFICATION</span
-              ><strong>Detected<br /><em>& blocked.</em></strong>
+              <span class="mini-label">LOCAL VERDICT</span
+              ><strong>Explained<br /><em>& enforced.</em></strong>
               <div class="confidence">
-                <span>Analysis confidence</span><b>99.8%</b>
+                <span>Evidence score</span><b>High confidence</b>
                 <div><i></i></div>
               </div>
             </div>
@@ -152,33 +142,33 @@
 
       <section class="how section" id="how-it-works">
         <div class="section-label">03 / How it works</div>
-        <h2>Protection that moves at<br />the speed of <em>students.</em></h2>
+        <h2>A detection system that<br />fits the way <em>districts deploy.</em></h2>
         <div class="steps">
           <article>
             <span>01</span>
             <div class="step-icon">⌘</div>
-            <h3>Deploy once</h3>
+            <h3>Deploy with policy</h3>
             <p>
-              Install Spark's lightweight extension across Chrome, Edge, and
-              ChromeOS through your existing device management.
+              Push the MV3 extension and its managed configuration through
+              your existing Chrome or ChromeOS administration tools.
             </p>
           </article>
           <article>
             <span>02</span>
             <div class="step-icon">◉</div>
-            <h3>Analyze in real time</h3>
+            <h3>Observe the runtime</h3>
             <p>
-              Spark observes traffic signals and browser behavior as students
-              work—without slowing their experience.
+              Spark’s Rust-to-WebAssembly detector observes pages, frames,
+              resources, and execution behavior in real time.
             </p>
           </article>
           <article>
             <span>03</span>
             <div class="step-icon">ϟ</div>
-            <h3>Block instantly</h3>
+            <h3>Enforce and explain</h3>
             <p>
-              When a bypass is detected, Spark applies your policy in
-              milliseconds and gives your team the context to act.
+              A local verdict applies policy immediately, with diagnostics for
+              administrators who need to understand the decision.
             </p>
           </article>
         </div>
@@ -187,36 +177,36 @@
       <section class="features section">
         <div class="section-label">04 / Built for districts</div>
         <div class="features-top">
-          <h2>Serious protection.<br /><em>Thoughtful control.</em></h2>
+          <h2>Deep visibility.<br /><em>Deliberate control.</em></h2>
           <p>
-            Everything districts need to secure learning without adding another
-            unwieldy console.
+            Purpose-built browser intelligence—without sending browsing
+            telemetry to a third-party analytics platform.
           </p>
         </div>
         <div class="feature-grid">
-          <div>Browser extension<br /><span>Chrome, Edge & ChromeOS</span></div>
+          <div>MV3 browser extension<br /><span>Chrome 125+ and ChromeOS</span></div>
           <div>
-            DNS-based filtering<br /><span>Policy at the network layer</span>
+            Rust → WebAssembly runtime<br /><span>Fast local detector execution</span>
           </div>
           <div>
-            AI-assisted analysis<br /><span>Patterns, not just blocklists</span>
+            Chrome Debugger Protocol<br /><span>Targets, frames, scripts & resources</span>
           </div>
           <div>
-            Deep packet inspection<br /><span>Visibility where it matters</span>
+            Game detection<br /><span>High-confidence browser-game activity</span>
           </div>
           <div>
             Modern proxy detection<br /><span
-              >Wisp, Bare, Scramjet, Rammerhead & more</span
+              >Wisp, Bare, Scramjet, Ultraviolet, Rammerhead</span
             >
           </div>
           <div>
-            Flexible allowlists<br /><span>District and global controls</span>
+            Managed distribution<br /><span>Blocklists and detector signal weights</span>
           </div>
           <div>
-            Self-hosted option<br /><span>Your data stays on your network</span>
+            Local diagnostics<br /><span>Decision traces and sanitized exports</span>
           </div>
           <div>
-            FERPA & CIPA ready<br /><span>Built around student privacy</span>
+            No browsing telemetry<br /><span>Page-level data stays out of Spark servers</span>
           </div>
         </div>
       </section>
@@ -226,29 +216,30 @@
         <div class="pricing-head">
           <h2>Start protected.<br /><em>Scale confidently.</em></h2>
           <p>
-            Clear options for every kind of district. No surprise platform fees.
+            Start with the deployment model that fits your district. We scope
+            coverage, managed configuration, and support together.
           </p>
         </div>
         <div class="plans">
           <article class="plan">
-            <span class="plan-kind">CLOUD</span>
-            <h3>Managed protection</h3>
-            <p>Everything your district needs, managed by Spark.</p>
-            <strong>$3 <small>/ student / year</small></strong
-            ><span class="placeholder">Entry Tier Pricing</span
+            <span class="plan-kind">PILOT</span>
+            <h3>Prove the detection gap</h3>
+            <p>Run Spark Filter with a focused group before district-wide rollout.</p>
+            <strong>Custom <small>pilot scope</small></strong
+            ><span class="placeholder">Start with one organizational unit</span
             ><a href="/contact/" class="plan-link">Talk to us <span>→</span></a>
             <ul>
-              <li>Browser & DNS filtering</li>
-              <li>Real-time bypass detection</li>
-              <li>Managed updates & support</li>
+              <li>Proxy and game detector coverage</li>
+              <li>Managed policy setup</li>
+              <li>Decision diagnostics</li>
             </ul>
           </article>
           <article class="plan featured">
             <span class="plan-kind">ENTERPRISE <b>POPULAR</b></span>
-            <h3>District-scale security</h3>
+            <h3>District-wide protection</h3>
             <p>
-              Flexible coverage and hands-on partnership for larger
-              environments.
+              Centrally managed configuration for the Chrome and ChromeOS
+              environments your teams already operate.
             </p>
             <strong>Custom <small>pricing</small></strong
             ><span class="placeholder">Based on district needs</span
@@ -256,25 +247,25 @@
               >Build your plan <span>→</span></a
             >
             <ul>
-              <li>Everything in Cloud</li>
-              <li>Priority support & onboarding</li>
-              <li>Custom policy configuration</li>
+              <li>Managed distribution endpoint</li>
+              <li>Detector signal-weight configuration</li>
+              <li>Priority onboarding and support</li>
             </ul>
           </article>
           <article class="plan">
-            <span class="plan-kind">SELF-HOSTED</span>
-            <h3>Complete control</h3>
+            <span class="plan-kind">CUSTOM</span>
+            <h3>Deployment designed with you</h3>
             <p>
-              Run Spark inside your environment. Your data never leaves your
-              network.
+              For districts with unique configuration, procurement, or support
+              requirements.
             </p>
-            <strong>$$$ <small>annual license</small></strong
-            ><span class="placeholder">Contact Us</span
+            <strong>Let's talk <small>architecture</small></strong
+            ><span class="placeholder">Tailored to your environment</span
             ><a href="/contact/" class="plan-link">Talk to us <span>→</span></a>
             <ul>
-              <li>Full on-premise deployment</li>
-              <li>Private data architecture</li>
-              <li>Optional support agreement</li>
+              <li>Configuration and policy design</li>
+              <li>Rollout planning</li>
+              <li>Procurement support</li>
             </ul>
           </article>
         </div>
@@ -302,7 +293,7 @@
     <footer>
       <a class="brand" href="/"
         ><span class="bolt">ϟ</span
-        ><span>Spark<span class="brand-light"></span></span
+        ><span>Spark<span class="brand-light">.edu</span></span
       ></a>
       <p>© 2026 Spark Education Technology</p>
       <div>
