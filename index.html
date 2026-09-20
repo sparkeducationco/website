@@ -93,49 +93,41 @@
         </div>
       </section>
 
-      <section class="solution section grid-bg" id="solution">
-        <div class="section-label">02 / The Spark platform</div>
+      <section class="solution section" id="solution">
+        <div class="section-label">02 / Platform</div>
         <div class="solution-head">
-          <h2>Inspect the page <em>from the inside.</em></h2>
+          <h2>Detection that sees <em>context.</em></h2>
           <p>
-            Spark attaches at the browser level and gives its detector the
-            evidence domain filters never receive: targets, frames, scripts,
-            resources, runtime behavior, and input patterns.
+            Spark evaluates the browser signals behind a page—not just its URL—so
+            districts can identify modern proxy runtimes and browser games with
+            a decision they can understand.
           </p>
         </div>
-        <div class="detection-window">
-          <div class="window-bar">
-            <span></span><span></span><span></span
-            ><b>spark://wasm-detector</b><i>● SESSION ACTIVE</i>
+        <div class="evidence-panel">
+          <div class="evidence-panel-head">
+            <span>Browser-level detection</span>
+            <span>Runs locally in the extension</span>
           </div>
-          <div class="window-content">
-            <div class="terminal">
-              <p>
-                <span class="muted">10:42:08</span> CDP attached · target tree synchronized
-              </p>
-              <p>
-                <span class="muted">10:42:08</span>
-                <span class="warning">!</span> Runtime evidence cluster identified
-              </p>
-              <p>
-                <span class="muted">10:42:08</span>
-                <span class="success">✓</span> Matched:
-                <b>Scramjet / inline proxy runtime</b>
-              </p>
-              <p>
-                <span class="muted">10:42:08</span> Managed policy applied:
-                <b>BLOCKED</b>
-              </p>
-              <p class="cursor">_</p>
-            </div>
-            <div class="detection-result">
-              <span class="mini-label">LOCAL VERDICT</span
-              ><strong>Explained<br /><em>& enforced.</em></strong>
-              <div class="confidence">
-                <span>Evidence score</span><b>High confidence</b>
-                <div><i></i></div>
-              </div>
-            </div>
+          <div class="evidence-grid">
+            <article>
+              <span class="evidence-index">01</span>
+              <h3>Observe the page</h3>
+              <p>Targets, frames, scripts, resources, and runtime behavior provide the context a URL cannot.</p>
+            </article>
+            <article>
+              <span class="evidence-index">02</span>
+              <h3>Classify the behavior</h3>
+              <p>Detectors identify known proxy runtimes, browser games, and administrator-configured matches.</p>
+            </article>
+            <article>
+              <span class="evidence-index">03</span>
+              <h3>Apply district policy</h3>
+              <p>Local decisions map to managed rules, with diagnostics available to explain what was detected.</p>
+            </article>
+          </div>
+          <div class="evidence-panel-foot">
+            <span>Rust → WebAssembly runtime</span>
+            <span>Chrome MV3 / ChromeOS</span>
           </div>
         </div>
       </section>
