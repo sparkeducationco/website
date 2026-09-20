@@ -84,14 +84,21 @@
             </p>
           </div>
         </div>
-        <div class="gap-scan">
-          <div class="gap-scan-head"><span>What domain filters see</span><span>What Spark observes</span></div>
-          <div class="gap-scan-body">
-            <div class="legacy-side"><span class="blind-label">Known domains</span><span class="blind-label">URL categories</span><span class="blind-label">Static lists</span><p>A new proxy URL can be live in minutes.</p></div>
-            <div class="spark-side"><span class="scan-label">Runtime behavior</span><span class="scan-label">Frame topology</span><span class="scan-label">Resource patterns</span><p>Behavior travels with the bypass.</p></div>
-          </div>
-          <div class="legacy-row"><span>Domain-only protection</span><div class="legacy-names"><span>Wisp</span><span>Bare</span><span>Scramjet</span><span>Ultraviolet</span><span>Rammerhead</span></div><span class="faded">Spark identifies the runtime</span></div>
+        <div class="comparison-panel">
+          <article class="comparison-column">
+            <p class="comparison-label">Traditional URL filtering</p>
+            <h3>Matches destinations.</h3>
+            <p>Domain-based tools act on the address and category information available before a page is understood.</p>
+            <ul><li>Known domains</li><li>URL categories</li><li>Static reputation lists</li></ul>
+          </article>
+          <article class="comparison-column comparison-column-spark">
+            <p class="comparison-label">Spark Filter</p>
+            <h3>Evaluates browser context.</h3>
+            <p>Spark uses the signals available within the browser to identify the behavior behind a destination.</p>
+            <ul><li>Runtime behavior</li><li>Frame structure</li><li>Resource and script patterns</li></ul>
+          </article>
         </div>
+        <p class="comparison-note">The result is a more complete basis for applying district policy as bypass tools evolve.</p>
       </section>
 
       <section class="solution section" id="solution">

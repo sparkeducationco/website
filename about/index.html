@@ -8,7 +8,7 @@
     <link rel="icon" href="/icon.png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
+  <body class="about-page">
     <header class="site-header">
       <a class="brand" href="/"
         ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
@@ -27,36 +27,39 @@
         ><a href="/contact/" class="nav-cta">Request a demo →</a>
       </nav>
     </header>
-    <main class="legal-page grid-bg">
-      <div class="page-intro">
-        <p class="eyebrow"><span class="pulse"></span> About Spark</p>
-        <h1>Security researchers, <em>not spectators.</em></h1>
-        <p>
-          We build browser-native detection for the way students actually use
-          the web—and the way modern bypasses actually operate.
-        </p>
-      </div>
-      <div class="about-grid">
-        <article class="about-block">
-          <p class="section-label">OUR ORIGIN</p>
-          <h2>We build from the browser outward.</h2>
-          <p>
-            Spark is built by security researchers who study the proxy runtimes
-            and browser behavior that slip past domain-only filters. Our
-            detector runs locally in the browser, compiled from Rust to
-            WebAssembly.
-          </p>
-        </article>
-        <article class="about-block">
-          <p class="section-label">OUR MISSION</p>
-          <h2>Keep students safe—with evidence that keeps up.</h2>
-          <p>
-            Students deserve an open, useful internet. Districts deserve a
-            clear, explainable decision when a proxy or browser game crosses the
-            line—without exporting page-level browsing telemetry.
-          </p>
-        </article>
-      </div>
+    <main>
+      <section class="about-hero">
+        <div>
+          <p class="eyebrow"><span class="pulse"></span> About Spark Education Technology</p>
+          <h1>Built for the browser<br />students <em>actually use.</em></h1>
+        </div>
+        <p class="about-hero-copy">Spark helps K–12 districts keep up with browser-based bypasses and games through detection that starts where the behavior happens: in the browser.</p>
+      </section>
+
+      <section class="about-origin">
+        <div class="about-origin-label"><span>01</span><p>Why Spark exists</p></div>
+        <div class="about-origin-copy">
+          <h2>School filtering needs a more complete signal.</h2>
+          <p>Traditional filters were designed around destinations. But modern bypasses use browser runtimes, frames, scripts, and changing infrastructure to hide the behavior that matters.</p>
+          <p>Spark was founded by security researchers with direct experience studying and building the technologies schools need to recognize. We built the product around that practical understanding—not around a larger domain list.</p>
+        </div>
+      </section>
+
+      <section class="about-principles">
+        <div class="about-principles-head"><p class="section-label">How we build</p><h2>Technology with district realities in mind.</h2></div>
+        <div class="about-principles-grid">
+          <article><span>01</span><h3>Browser-native</h3><p>Detection runs locally in the managed browser, where the relevant runtime and page signals are available.</p></article>
+          <article><span>02</span><h3>Operationally clear</h3><p>District teams get decisions grounded in observable behavior and managed policy—not a black-box score.</p></article>
+          <article><span>03</span><h3>Privacy-aware</h3><p>Spark is designed to make local detection decisions without using page-level browsing telemetry as a product input.</p></article>
+        </div>
+      </section>
+
+      <section class="about-mission">
+        <p class="section-label">Our mission</p>
+        <h2>Keep students safe online<br />with detection that <em>keeps up.</em></h2>
+        <p>Students deserve useful access to the web. Districts deserve dependable controls that evolve with the environment they manage.</p>
+        <a class="button button-primary" href="/contact/">Talk with Spark <span>→</span></a>
+      </section>
     </main>
     <footer>
       <a class="brand" href="/"
