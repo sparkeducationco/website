@@ -2738,6 +2738,11 @@ footer .brand-icon {
   width: 21px;
   height: 21px;
 }
+.brand {
+  gap: 12px;
+  letter-spacing: -.7px;
+}
+.brand > span:last-child { word-spacing: 3px; }
 .terms-page .terms-meta span + span {
   padding-left: 0;
   border-left: 0;
