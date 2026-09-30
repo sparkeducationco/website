@@ -30,7 +30,7 @@ class Events {
   }
 }
 
-function createHarness({ reduced = false, desktop = true, hidden = false, hash = "", scrollY = 0, lenis = true, intersection = true, waapi = true, page = "home", entering = false } = {}) {
+function createHarness({ reduced = false, desktop = true, hidden = false, hash = "", scrollY = 0, lenis = true, intersection = true, waapi = true, page = "home", entering = false, homeIntro = false } = {}) {
   const animationRecords = [];
   const observers = [];
   const instances = [];
@@ -120,6 +120,7 @@ function createHarness({ reduced = false, desktop = true, hidden = false, hash =
 
   const root = new Element("html");
   if (entering) root.classList.add("spark-page-entering");
+  if (homeIntro) root.classList.add("spark-home-intro");
   const main = new Element("main", [], root);
   const solution = new Element("section", [], main);
   const pricing = new Element("section", [], main);
@@ -307,7 +308,7 @@ function createHarness({ reduced = false, desktop = true, hidden = false, hash =
   };
   return {
     window, document, root, main, solution, pricing, artwork, aperture, intro, heroButton,
-    posterIndex, platformContent, platformButton, details, detailBody, detailLink, plan,
+    posterIndex, platformContent, platformButton, details, detailBody, detailLink, plan, lines,
     planButton, meta, revealTargets, animationRecords, observers, instances, frames,
     reducedMedia, desktopMedia, flushFrame, flushAll, link, Element,
     innerHero, innerArtwork, innerTitle, innerButton, contactInfo, contactForm,
@@ -806,4 +807,19 @@ test("fallback entries use only the document slide in the incoming viewport", ()
   assert.equal(h.animationRecords.length, 0);
   h.observers.at(-1).enter(h.contactForm);
   assert.equal(h.animationRecords.length, 0);
+});
+
+test("the homepage hero reveal is timed to emerge as the introduction lifts", () => {
+  const h = createHarness({ homeIntro: true });
+  assert.equal(h.activeAnimations(h.lines[0])[0].options.delay, 1090);
+  assert.equal(h.activeAnimations(h.artwork)[0].options.delay, 1000);
+  assert.equal(h.activeAnimations(h.intro)[0].options.delay, 1330);
+  h.window.dispatch("spark:home-intro-end", { detail: { interrupted: false } });
+  assert.ok(h.animationRecords.every((animation) => !animation.cancelled));
+});
+
+test("dismissing the intro also exposes the hero immediately, without delayed hidden text", () => {
+  const h = createHarness({ homeIntro: true });
+  h.window.dispatch("spark:home-intro-end", { detail: { interrupted: true } });
+  assert.ok(h.animationRecords.every((animation) => animation.cancelled));
 });

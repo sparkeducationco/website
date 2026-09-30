@@ -70,11 +70,12 @@
     if (introPlayed) return;
     introPlayed = true;
     if (reducedMotion.matches || window.scrollY > 80 || window.location.hash) return;
+    const openingDelay = root.classList.contains("spark-home-intro") ? 1000 : 0;
     document.querySelectorAll(".hero-line > span").forEach((line, index) => {
       animate(line, [
         { transform: "translateY(108%)" },
         { transform: "translateY(0)" },
-      ], { duration: 1000, delay: 90 + index * 105 });
+      ], { duration: 1000, delay: openingDelay + 90 + index * 105 });
     });
     for (const [selector, delay] of [
       [".poster .eyebrow", 0], [".poster-intro", 330], [".poster-index", 420],
@@ -83,11 +84,11 @@
       [".contact-form", 180], [".privacy-hero-inner", 80], [".legal-stamp", 170],
     ]) {
       const element = document.querySelector(selector);
-      if (element) reveal(element, delay);
+      if (element) reveal(element, openingDelay + delay);
     }
     if (artwork) {
       seen.add(artwork);
-      animate(artwork, [{ opacity: 0 }, { opacity: 1 }], { duration: 1100 });
+      animate(artwork, [{ opacity: 0 }, { opacity: 1 }], { duration: 1100, delay: openingDelay });
     }
   };
 
@@ -264,6 +265,10 @@
   }, { passive: true });
   window.addEventListener("hashchange", cancelScroll);
   window.addEventListener("popstate", cancelScroll);
+  window.addEventListener("spark:home-intro-end", (event) => {
+    if (!event.detail?.interrupted) return;
+    for (const animation of animations) animation.cancel();
+  });
   const settlePageEntrance = () => {
     // The document slide replaces entrance reveals in the incoming viewport.
     introPlayed = true;
