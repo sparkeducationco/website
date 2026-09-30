@@ -122,6 +122,7 @@ a, button, summary { touch-action: manipulation; }
   font-size: 11px;
   letter-spacing: .02em;
   cursor: pointer;
+  animation: spark-intro-curtain 1800ms cubic-bezier(.76, 0, .24, 1) both;
   transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 .spark-home-intro .home-intro-sound:hover,
