@@ -222,6 +222,66 @@
   .inner-hero-art > img, .motion-depth .inner-hero-art > img { transform: scale(1.035); }
 }
 
+.about-page .page-section { padding-top: 76px; padding-bottom: 76px; }
+.about-page .about-cover { padding-top: 30px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.about-cover-meta { display: flex; justify-content: space-between; gap: 24px; padding-bottom: 22px; border-bottom: 1px solid var(--ink); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.about-cover-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, .7fr); gap: 8%; align-items: end; padding-top: 50px; }
+.about-cover .inner-hero-copy { padding: 0; }
+.about-cover h1 { font-size: clamp(76px, 8.4vw, 132px); line-height: 1.02; letter-spacing: -.035em; margin-bottom: 36px; }
+.about-cover .inner-hero-copy > p { max-width: 600px; }
+.about-cover-aside { min-width: 0; padding-bottom: 7px; }
+.about-perspective-mark { width: 100%; max-width: 310px; margin-bottom: 32px; stroke: var(--ink); stroke-width: 1; }
+.about-perspective-mark .perspective-ray { stroke: #bba524; stroke-width: 7; }
+.about-perspective-mark circle { fill: var(--yellow); }
+.about-aside-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; padding-top: 18px; border-top: 1px solid var(--line); }
+.about-aside-statement { font-family: var(--display-font); font-style: italic; font-size: clamp(30px, 3vw, 46px); line-height: 1.15; margin-top: 16px; max-width: 310px; }
+.about-page .about-origin { grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 8%; }
+.about-page .about-origin-label { flex-direction: column; gap: 22px; }
+.about-page .about-origin-label > span { font-size: 94px; color: #777765; }
+.about-page .about-origin-copy { padding-top: 0; }
+.about-page .about-principles { background: #e8e6da; color: var(--ink); }
+.about-page .about-principles-head { grid-template-columns: 1.3fr 1fr; }
+.about-page .about-principles-head > p { color: var(--muted); }
+.about-page .about-principles-grid { display: block; border-top-color: #b6b5a6; }
+.about-page .about-principles-grid article { display: grid; grid-template-columns: 66px minmax(170px, .65fr) minmax(0, 1fr); gap: 40px; align-items: baseline; padding: 32px 0; }
+.about-page .about-principles-grid article + article { border-left: 0; border-top: 1px solid #b6b5a6; padding-left: 0; }
+.about-page .about-principles-grid article > span { font-family: var(--display-font); font-size: 44px; line-height: 1; color: var(--muted); }
+.about-page .about-principles-grid h3 { font-family: var(--display-font); font-size: 39px; margin-top: 0; }
+.about-page .about-principles-grid p { color: var(--muted); margin-top: 0; font-size: 15px; max-width: 520px; }
+.about-page .about-principles-grid article:last-child { padding-bottom: 0; }
+.about-page .about-mission { background: var(--ink); color: var(--paper); }
+.about-page .about-mission .section-meta { border-color: #4d4e43; }
+.about-page .about-mission h2 { font-size: clamp(58px, 6.8vw, 106px); margin: 44px 0; }
+.about-page .about-mission h2 > span { color: var(--yellow); }
+.about-page .about-mission > div:not(.section-meta) > p { color: #c2c3b7; }
+.about-page .site-footer { border-top: 1px solid #4d4e43; }
+
+@media (max-width: 850px) {
+  .about-page .page-section { padding-top: 48px; padding-bottom: 48px; }
+  .about-page .about-cover { padding-top: 24px; }
+  .about-cover-layout { grid-template-columns: 1fr; gap: 40px; padding-top: 36px; }
+  .about-cover .inner-hero-copy { max-width: none; }
+  .about-cover h1 { font-size: clamp(64px, 11vw, 94px); }
+  .about-cover-aside { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: 0 32px; align-items: center; }
+  .about-perspective-mark { grid-row: 1 / 3; margin-bottom: 0; max-width: 240px; }
+  .about-aside-label { align-self: end; }
+  .about-aside-statement { align-self: start; }
+  .about-page .about-origin { grid-template-columns: 1fr; gap: 24px; }
+  .about-page .about-origin-label { flex-direction: row; align-items: center; }
+  .about-page .about-origin-label > span { font-size: 58px; }
+  .about-page .about-principles-head { grid-template-columns: 1fr; gap: 24px; }
+  .about-page .about-principles-grid article { grid-template-columns: 48px minmax(0, 1fr); gap: 10px 24px; }
+  .about-page .about-principles-grid p { grid-column: 2; }
+}
+@media (max-width: 500px) {
+  .about-cover-meta { font-size: 9px; gap: 16px; }
+  .about-cover h1 { font-size: clamp(52px, 13vw, 68px); margin-bottom: 24px; }
+  .about-cover-aside { gap: 0 20px; }
+  .about-aside-statement { font-size: 29px; }
+  .about-page .about-principles-grid h3 { font-size: 33px; }
+  .about-page .about-mission h2 { font-size: 51px; }
+}
+
 @media print {
   .site-header, .site-footer, .skip-link, .policy-nav, .legal-stamp { display: none; }
   .legal-page, .privacy-hero { background: white; color: black; }

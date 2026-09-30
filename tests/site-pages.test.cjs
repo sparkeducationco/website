@@ -67,6 +67,19 @@ test("the presentation-only introduction exists on the homepage and nowhere else
   }
 });
 
+test("About has an editorial cover and does not reuse the homepage hero image", () => {
+  const about = htmlFor("about");
+  assert.match(about, /class="about-cover page-section"/);
+  assert.match(about, /class="about-perspective-mark"/);
+  assert.ok(!about.includes('src="/assets/spark-field.webp"'));
+  assert.ok(!about.includes('as="image"'));
+  assert.ok(about.includes("Spark was founded by high school and college students"));
+  assert.ok(about.includes("Our team has built and maintained tools used to bypass existing school filtering software."));
+  assert.ok(!about.includes("security researchers"));
+  assert.ok(about.includes("Our mission"));
+  assert.match(about, /href="\/contact\/">Start a conversation/);
+});
+
 test("all local page links, fragments and asset references resolve", () => {
   for (const page of pages) {
     const html = htmlFor(page);

@@ -43,7 +43,7 @@
     ".district-heading, .district-item, .pilot-copy, .pilot-checklist, " +
     ".faq-intro, .faq-list > details, " +
     ".pricing-heading, .plan, .closing h2, .closing-bottom, " +
-    ".inner-hero-copy, .inner-hero-art, .about-origin-label, .about-origin-copy, " +
+    ".inner-hero-copy, .inner-hero-art, .about-cover-meta, .about-cover-aside, .about-origin-label, .about-origin-copy, " +
     ".about-principles-head, .about-principles-grid article, .about-mission > *, " +
     ".contact-info, .contact-form, .privacy-hero-inner, .legal-stamp, " +
     ".privacy-pillars > div, .policy-nav, .policy-document > *"
