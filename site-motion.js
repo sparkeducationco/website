@@ -280,6 +280,13 @@
       observer?.unobserve(element);
     }
   };
+  window.addEventListener("spark:page-entry-ready", () => {
+    cancelScroll();
+    scroller?.resize();
+    scroller?.scrollTo(window.scrollY, { immediate: true, force: true });
+    settlePageEntrance();
+    requestTick();
+  });
   window.addEventListener("pagehide", () => {
     suspended = true;
     syncMotion();

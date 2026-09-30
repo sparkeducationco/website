@@ -30,15 +30,15 @@ test("all routes share navigation, local motion assets and semantic page landmar
     assert.equal(menu.type, "button");
     assert.equal(menu["aria-controls"], "primary-nav");
     assert.equal(menu["aria-expanded"], "false");
-    assert.deepEqual(tags(html, "script").map((tag) => tag.src), [
+    assert.deepEqual(tags(html, "script").map((tag) => tag.src.split("?")[0]), [
       "/site-navigation.js",
       ...(!page ? ["/home-intro.js"] : []),
       "/script.js", "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
     ], `${page}: common scripts execute in dependency order`);
-    for (const script of tags(html, "script").filter((tag) => !["/site-navigation.js", "/home-intro.js"].includes(tag.src))) assert.ok("defer" in script);
+    for (const script of tags(html, "script").filter((tag) => !["/site-navigation.js", "/home-intro.js"].includes(tag.src.split("?")[0]))) assert.ok("defer" in script);
     assert.ok(html.indexOf('/site-navigation.js') < html.indexOf('</head>'), "entry initialization precedes first paint");
     const styles = tags(html, "link").filter((tag) => tag.rel === "stylesheet").map((tag) => tag.href);
-    assert.deepEqual(styles, page ? ["/site.css?v=20260930-intro-rays", "/pages.css"] : ["/site.css?v=20260930-intro-rays"]);
+    assert.deepEqual(styles, page ? ["/site.css?v=20260930-vertical-entry", "/pages.css?v=20260930-inner-doodles"] : ["/site.css?v=20260930-vertical-entry"]);
     assert.ok(!html.includes("/homepage") && !html.includes('href="/styles.css"'), "no obsolete styling/motion references");
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(([, id]) => id);
     assert.equal(ids.length, new Set(ids).size, `${page}: unique IDs`);
@@ -75,6 +75,21 @@ test("homepage doodles are lightweight decorative artwork", () => {
     assert.equal(doodle.focusable, "false");
     assert.ok(doodle.viewBox);
   }
+});
+
+test("interior pages have accessible decorative accents outside legal text and form fields", () => {
+  for (const page of pages.filter(Boolean)) {
+    const html = htmlFor(page);
+    const doodles = tags(html, "svg").filter((tag) => tag.class?.includes("editorial-doodle"));
+    assert.equal(doodles.length, 2, `${page}: two restrained accents`);
+    for (const doodle of doodles) {
+      assert.equal(doodle["aria-hidden"], "true");
+      assert.equal(doodle.focusable, "false");
+    }
+    const readingArea = html.match(/<(?:article|form)\b[\s\S]*?<\/(?:article|form)>/)?.[0] || "";
+    assert.ok(!readingArea.includes("editorial-doodle"), `${page}: reading and input areas stay clear`);
+  }
+  assert.match(read("pages.css"), /@media print\s*\{\s*\.editorial-doodle, \.contact-doodles \{ display: none; \}/);
 });
 
 test("About has an editorial cover and does not reuse the homepage hero image", () => {

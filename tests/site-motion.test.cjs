@@ -780,6 +780,16 @@ test("document slides replace viewport entrances but retain below-fold reveals",
   assert.equal(h.activeAnimations(h.policySection).length, 1);
 });
 
+test("prepared fragment entries synchronize Lenis before revealing the destination", () => {
+  const h = createHarness({ entering: true, hash: "#questions", scrollY: 5700 });
+  h.window.dispatch("spark:page-entry-ready");
+  assert.equal(h.scroller.scrollCalls.at(-1).destination, 5700);
+  assert.equal(h.scroller.scrollCalls.at(-1).options.immediate, true);
+  assert.equal(h.scroller.scrollCalls.at(-1).options.force, true);
+  assert.ok(h.scroller.resizeCalls > 0);
+  assert.equal(h.animationRecords.length, 0);
+});
+
 test("ordinary loads without a document transition keep their entrance animations", () => {
   const h = createHarness({ page: "contact" });
   assert.equal(h.activeAnimations(h.contactForm).length, 1);

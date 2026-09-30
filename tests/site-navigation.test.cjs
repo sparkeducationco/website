@@ -9,10 +9,11 @@ const source = fs.readFileSync(path.join(__dirname, "../site-navigation.js"), "u
 test("incoming document slides disable native smooth fragment scrolling", () => {
     const css = fs.readFileSync(path.join(__dirname, "../site.css"), "utf8");
     assert.match(css, /\.spark-page-entering\s*\{[^}]*scroll-behavior:\s*auto/);
+    assert.match(css, /\.spark-page-preparing \.site-footer\s*\{[^}]*transform:\s*none/);
 });
 
 function harness({ href = "https://spark.test/", reduced = false, native = false,
-    storageBlocked = false, entry = null, hidden = false, navigationFails = false, initialTime = 50000 } = {}) {
+    storageBlocked = false, entry = null, hidden = false, navigationFails = false, initialTime = 50000, waitFonts = false } = {}) {
     class Events {
         constructor() { this.listeners = new Map(); }
         addEventListener(type, callback) {
@@ -35,6 +36,8 @@ function harness({ href = "https://spark.test/", reduced = false, native = false
         }
         closest() { return this; }
         hasAttribute(name) { return name in this.attributes; }
+        scrollIntoView(options) { this.scrollOptions = options; }
+        getBoundingClientRect() { return { top: 1200 }; }
     }
     const classes = new Set();
     const root = { classList: {
@@ -42,14 +45,26 @@ function harness({ href = "https://spark.test/", reduced = false, native = false
         contains: (name) => classes.has(name),
     } };
     const main = new Element();
+    const fragment = new Element();
     const document = new Events();
     document.documentElement = root;
     document.hidden = hidden;
-    document.getElementById = (id) => id === "main" ? main : null;
+    document.getElementById = (id) => id === "main" ? main : id === "questions" ? fragment : null;
+    let fontReady;
+    if (waitFonts) document.fonts = { ready: { then(callback) { fontReady = callback; } } };
     const window = new Events();
     const preference = new Events();
     preference.matches = reduced;
     window.matchMedia = () => preference;
+    window.scrollY = 500;
+    window.scrollX = 1280;
+    const scrollCalls = [];
+    window.getComputedStyle = (element) => element === root ? { scrollPaddingTop: "72px" } : { scrollMarginTop: "0px" };
+    window.scrollTo = (options) => {
+        scrollCalls.push(options);
+        window.scrollX = options.left;
+        window.scrollY = options.top;
+    };
     const destinations = [];
     window.location = new URL(href);
     window.location.assign = (url) => {
@@ -76,6 +91,10 @@ function harness({ href = "https://spark.test/", reduced = false, native = false
         return id;
     };
     window.clearTimeout = (id) => timers.delete(id);
+    const frames = new Map();
+    window.requestAnimationFrame = callback => { const id = ++nextId; frames.set(id, callback); return id; };
+    window.cancelAnimationFrame = id => frames.delete(id);
+    const flushFrame = () => { const batch = [...frames.values()]; frames.clear(); for (const callback of batch) callback(); };
     function advance(duration) {
         const end = now + duration;
         while (true) {
@@ -87,12 +106,89 @@ function harness({ href = "https://spark.test/", reduced = false, native = false
         }
         now = end;
     }
-    vm.runInNewContext(source, { window, document, Element, URL, Date: { now: () => now } });
+    class CustomEvent { constructor(type) { this.type = type; } }
+    window.dispatchEvent = event => window.dispatch(event.type, event);
+    vm.runInNewContext(source, { window, document, Element, URL, CustomEvent, Date: { now: () => now } });
     const click = (url, event = {}, attributes = {}) => document.dispatch("click", {
         target: new Element(new URL(url, href).href, attributes), ...event,
     });
-    return { window, document, main, classes, storage, destinations, timers, preference, advance, click };
+    return { window, document, main, fragment, classes, storage, destinations, timers, preference, advance, click, flushFrame, scrollCalls, fontsReady: () => fontReady?.() };
 }
+
+test("cross-page FAQ entry positions its fragment before the slide starts", () => {
+    const href = "https://spark.test/#questions";
+    const h = harness({ href, entry: { destination: href, created: 49900 }, waitFonts: true });
+    let ready = 0;
+    h.window.addEventListener("spark:page-entry-ready", () => ready++);
+    assert.ok(h.classes.has("spark-page-preparing"));
+    h.document.dispatch("DOMContentLoaded");
+    h.window.dispatch("load");
+    h.flushFrame();
+    assert.equal(h.fragment.scrollOptions, undefined, "fonts must settle first");
+    h.fontsReady(); h.flushFrame();
+    assert.ok(h.classes.has("spark-page-preparing"), "keep destination hidden while layout settles");
+    h.flushFrame();
+    assert.equal(h.fragment.scrollOptions, undefined, "never scroll a transformed target into horizontal view");
+    assert.equal(h.scrollCalls.length, 1);
+    assert.equal(h.scrollCalls[0].behavior, "instant");
+    assert.equal(h.scrollCalls[0].top, 1628);
+    assert.equal(h.scrollCalls[0].left, 0);
+    assert.equal(h.window.scrollX, 0);
+    assert.equal(ready, 1);
+    assert.equal(h.classes.has("spark-page-preparing"), false);
+    assert.ok(h.classes.has("spark-page-entering"));
+    h.document.dispatch("animationend", { target: h.main, animationName: "spark-page-in" });
+    assert.equal(h.classes.size, 0);
+});
+
+test("all interior routes enter all homepage sections without horizontal scrolling", () => {
+    for (const route of ["about", "contact", "privacy", "terms"]) {
+        for (const anchor of ["solution", "district-life", "how-it-works", "pilot", "pricing", "questions"]) {
+            const outgoing = harness({ href: `https://spark.test/${route}/` });
+            outgoing.click(`/#${anchor}`); outgoing.advance(450);
+            const entry = JSON.parse(outgoing.storage.get("spark-page-entry"));
+            const incoming = harness({ href: outgoing.destinations[0], entry, initialTime: entry.created + 50 });
+            incoming.document.getElementById = id => id === "main" ? incoming.main : id === anchor ? incoming.fragment : null;
+            incoming.document.dispatch("DOMContentLoaded"); incoming.window.dispatch("load");
+            incoming.flushFrame(); incoming.flushFrame();
+            assert.equal(incoming.scrollCalls[0].left, 0, `${route} -> ${anchor}`);
+            assert.equal(incoming.fragment.scrollOptions, undefined);
+            assert.ok(incoming.classes.has("spark-page-entering"));
+            assert.ok(!incoming.classes.has("spark-page-preparing"));
+        }
+    }
+});
+
+test("fragment positioning respects header padding and section margin, clamped at page top", () => {
+    const href = "https://spark.test/#questions";
+    const h = harness({ href, entry: { destination: href, created: 49900 } });
+    h.window.getComputedStyle = element => element === h.document.documentElement ? { scrollPaddingTop: "64px" } : { scrollMarginTop: "12px" };
+    h.fragment.getBoundingClientRect = () => ({ top: -490 });
+    h.document.dispatch("DOMContentLoaded"); h.window.dispatch("load"); h.flushFrame(); h.flushFrame();
+    assert.equal(h.scrollCalls[0].top, 0);
+    assert.equal(h.scrollCalls[0].left, 0);
+});
+
+test("fragment preparation recovers when fonts or load never settle", () => {
+    const href = "https://spark.test/#questions";
+    const h = harness({ href, entry: { destination: href, created: 49900 }, waitFonts: true });
+    h.document.dispatch("DOMContentLoaded");
+    h.advance(1200); h.flushFrame(); h.flushFrame();
+    assert.equal(h.classes.has("spark-page-preparing"), false);
+    h.advance(1800);
+    assert.equal(h.classes.size, 0);
+});
+
+test("leaving or reduced motion cancels a queued fragment preparation", () => {
+    for (const stop of [h => h.window.dispatch("pagehide"), h => { h.preference.matches = true; h.preference.dispatch("change"); }]) {
+        const href = "https://spark.test/#questions";
+        const h = harness({ href, entry: { destination: href, created: 49900 } });
+        h.document.dispatch("DOMContentLoaded"); h.window.dispatch("load");
+        h.flushFrame(); stop(h); h.flushFrame();
+        assert.equal(h.classes.size, 0);
+        assert.equal(h.fragment.scrollOptions, undefined);
+    }
+});
 
 test("fallback slides out before navigating and carries the complete destination", () => {
     const h = harness();

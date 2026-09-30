@@ -8,10 +8,16 @@
   let exitTimer = null;
   let recoveryTimer = null;
   let entryTimer = null;
+  let prepareTimer = null;
+  let entryFrame = null;
 
   const clearEntry = () => {
     root.classList.remove("spark-page-entering");
+    root.classList.remove("spark-page-preparing");
     window.clearTimeout(entryTimer);
+    window.clearTimeout(prepareTimer);
+    if (entryFrame !== null) window.cancelAnimationFrame(entryFrame);
+    entryFrame = null;
   };
   const resetExit = () => {
     root.classList.remove("spark-page-leaving");
@@ -28,15 +34,52 @@
         Date.now() - entry.created >= 0 && Date.now() - entry.created < 10000 &&
         !reducedMotion.matches && !document.hidden) {
       root.classList.add("spark-page-entering");
+      if (window.location.hash) root.classList.add("spark-page-preparing");
     }
   } catch {
     // Storage restrictions must never prevent navigation or expose a blank page.
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (root.classList.contains("spark-page-entering")) {
+    if (!root.classList.contains("spark-page-entering")) return;
+    if (!root.classList.contains("spark-page-preparing")) {
       entryTimer = window.setTimeout(clearEntry, 1800);
+      return;
     }
+    let fontsReady = !document.fonts;
+    let loaded = document.readyState === "complete";
+    let scheduled = false;
+    const begin = () => {
+      if (!fontsReady || !loaded || scheduled || !root.classList.contains("spark-page-preparing")) return;
+      scheduled = true;
+      window.clearTimeout(prepareTimer);
+      // Resolve the fragment only after fonts, native anchor placement and header measurement settle.
+      entryFrame = window.requestAnimationFrame(() => {
+        entryFrame = window.requestAnimationFrame(() => {
+          entryFrame = null;
+          if (!root.classList.contains("spark-page-preparing")) return;
+          try {
+            const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+            if (target) {
+              const padding = parseFloat(window.getComputedStyle(root).scrollPaddingTop) || 0;
+              const margin = parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
+              const top = target.getBoundingClientRect().top + window.scrollY - padding - margin;
+              // scrollIntoView can follow a translated anchor sideways and cancel out the page slide.
+              window.scrollTo({ left: 0, top: Math.max(0, top), behavior: "instant" });
+            }
+          } catch {
+            // A missing or malformed fragment must still reveal the destination.
+          }
+          window.dispatchEvent(new CustomEvent("spark:page-entry-ready"));
+          root.classList.remove("spark-page-preparing");
+          entryTimer = window.setTimeout(clearEntry, 1800);
+        });
+      });
+    };
+    if (document.fonts) document.fonts.ready.then(() => { fontsReady = true; begin(); }, () => { fontsReady = true; begin(); });
+    window.addEventListener("load", () => { loaded = true; begin(); }, { once: true });
+    prepareTimer = window.setTimeout(() => { fontsReady = loaded = true; begin(); }, 1200);
+    begin();
   }, { once: true });
   document.addEventListener("animationend", (event) => {
     if (event.target !== document.getElementById("main")) return;

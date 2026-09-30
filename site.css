@@ -78,6 +78,12 @@ a, button, summary { touch-action: manipulation; }
 .spark-page-entering .site-footer {
   animation: spark-page-in 750ms cubic-bezier(.22, .8, .25, 1) both;
 }
+.spark-page-preparing main,
+.spark-page-preparing .site-footer {
+  animation: none;
+  visibility: hidden;
+  transform: none;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .spark-page-leaving main,

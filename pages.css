@@ -282,7 +282,24 @@
   .about-page .about-mission h2 { font-size: 51px; }
 }
 
+.contact-doodles { display: flex; align-items: center; justify-content: space-between; gap: 32px; max-width: 330px; margin-top: 32px; }
+.contact-doodles .editorial-doodle { margin: 0; color: #80732b; }
+.contact-doodles .doodle-spark { width: 48px; }
+.privacy-hero-inner .legal-doodle { margin: 24px 0 0; color: #756a29; }
+.privacy-hero-inner .doodle-glimmer { width: 48px; }
+.policy-nav .legal-doodle { margin-top: 26px; color: #80732b; }
+.policy-nav .doodle-orbit { width: 76px; }
+.policy-nav .doodle-loops { width: 94px; }
+.about-origin-copy .doodle-constellation { margin-left: auto; }
+
+@media (max-width: 700px) {
+  .contact-doodles { margin-top: 24px; max-width: 270px; }
+  .privacy-hero-inner .legal-doodle { margin-top: 20px; }
+  .policy-nav .legal-doodle { margin-left: auto; margin-right: 12px; }
+}
+
 @media print {
+  .editorial-doodle, .contact-doodles { display: none; }
   .site-header, .site-footer, .skip-link, .policy-nav, .legal-stamp { display: none; }
   .legal-page, .privacy-hero { background: white; color: black; }
   .privacy-hero, .privacy-content { display: block; padding: 0; }
