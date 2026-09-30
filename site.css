@@ -104,6 +104,34 @@ a, button, summary { touch-action: manipulation; }
 .menu-toggle { display: none; }
 
 .home-intro { display: none; }
+.home-intro-sound { display: none; }
+.spark-home-intro .home-intro-sound {
+  position: fixed;
+  z-index: 23;
+  top: max(18px, env(safe-area-inset-top));
+  right: var(--gutter);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid #f4f0e680;
+  border-radius: 999px;
+  background: #0a0a0fcc;
+  color: var(--paper);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.spark-home-intro .home-intro-sound:hover,
+.spark-home-intro .home-intro-sound:focus-visible {
+  border-color: var(--yellow);
+  background: var(--yellow);
+  color: var(--ink);
+}
+.home-intro-sound-icon { font-size: 16px; line-height: .8; }
+.home-intro-sound:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
 .spark-home-intro .site-header { visibility: hidden; }
 .spark-home-header-reveal .site-header {
   animation: spark-intro-header 420ms cubic-bezier(.22, 1, .36, 1) both;
