@@ -67,6 +67,16 @@ test("the presentation-only introduction exists on the homepage and nowhere else
   }
 });
 
+test("homepage doodles are lightweight decorative artwork", () => {
+  const doodles = tags(htmlFor(""), "svg").filter((tag) => tag.class?.includes("editorial-doodle"));
+  assert.equal(doodles.length, 4);
+  for (const doodle of doodles) {
+    assert.equal(doodle["aria-hidden"], "true");
+    assert.equal(doodle.focusable, "false");
+    assert.ok(doodle.viewBox);
+  }
+});
+
 test("About has an editorial cover and does not reuse the homepage hero image", () => {
   const about = htmlFor("about");
   assert.match(about, /class="about-cover page-section"/);
