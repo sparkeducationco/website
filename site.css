@@ -55,6 +55,37 @@ a, button, summary { touch-action: manipulation; }
 .skip-link { position: fixed; top: 12px; left: 12px; z-index: 30; padding: 12px 20px; background: var(--ink); color: var(--yellow); transform: translateY(-160%); }
 .skip-link:focus { transform: none; }
 
+/* Keep the same controlled slide in every browser, with real document navigation. */
+@view-transition { navigation: none; }
+
+@keyframes spark-page-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes spark-page-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.spark-page-leaving,
+.spark-page-entering { overflow-x: clip; }
+.spark-page-leaving main,
+.spark-page-leaving .site-footer {
+  animation: spark-page-out 450ms cubic-bezier(.4, 0, .7, 1) both;
+  pointer-events: none;
+}
+.spark-page-entering main,
+.spark-page-entering .site-footer {
+  animation: spark-page-in 750ms cubic-bezier(.22, .8, .25, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spark-page-leaving main,
+  .spark-page-leaving .site-footer,
+  .spark-page-entering main,
+  .spark-page-entering .site-footer { animation: none; }
+}
+
 .site-header { min-height: 72px; padding: 12px var(--gutter); display: flex; align-items: center; justify-content: space-between; gap: 36px; border-bottom: 1px solid var(--ink); position: sticky; top: 0; z-index: 20; background: var(--paper); }
 .brand { display: inline-flex; align-items: center; min-height: 44px; gap: 12px; flex-shrink: 0; font-size: 23px; font-weight: 700; letter-spacing: -.9px; line-height: 1.2; }
 .brand-icon { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
@@ -188,10 +219,13 @@ details[open] .detail-toggle::after { transform: none; }
 .pricing-heading { display: flex; align-items: end; justify-content: space-between; gap: 48px; padding: 56px 0 44px; }
 .pricing h2 { font-size: clamp(60px, 6.5vw, 112px); line-height: 1.04; letter-spacing: -.025em; }
 .pricing-heading > p { font-size: 15px; padding-bottom: 5px; }
-.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--ink); }
-.plan { display: flex; flex-direction: column; padding: 26px clamp(24px, 2.5vw, 44px) 0; min-width: 0; }
-.plan + .plan { border-left: 1px solid var(--ink); }
-.plan-student { background: var(--yellow); }
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); isolation: isolate; }
+.plan {
+  position: relative; z-index: 0; display: flex; flex-direction: column;
+  padding: 26px clamp(24px, 2.5vw, 44px) 0; min-width: 0; border: 1px solid var(--ink); background: var(--paper);
+  transition: translate .55s cubic-bezier(.22, 1, .36, 1), scale .55s cubic-bezier(.22, 1, .36, 1), background-color .3s ease, box-shadow .45s ease;
+}
+.plan:focus-within { background: var(--yellow); }
 .plan-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; }
 .plan h3 { font-family: var(--display-font); font-size: clamp(49px, 5vw, 80px); font-weight: 400; line-height: 1.04; text-transform: none; margin-top: 32px; min-height: 2.08em; letter-spacing: -.025em; }
 .plan-student h3 { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
@@ -200,8 +234,8 @@ details[open] .detail-toggle::after { transform: none; }
 .plan-note { font-size: 11px; margin-top: 22px; font-weight: 600; }
 .plan-description { font-size: 13px; margin-top: 20px; min-height: 3.3em; max-width: 260px; line-height: 1.65; }
 .plan ul { list-style: none; padding: 0; margin: 27px 0 36px; font-size: 11px; line-height: 1.5; }
-.plan li { padding: 9px 0; border-top: 1px solid #b9b8a9; }
-.plan-student li { border-color: #b6a436; }
+.plan li { padding: 9px 0; border-top: 1px solid #b9b8a9; transition: border-color .3s ease; }
+.plan:focus-within li { border-color: #b6a436; }
 .plan-link { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px 0; border-top: 1px solid var(--ink); font-size: 12px; font-weight: 700; margin-top: auto; }
 .plan-link span { font-size: 25px; line-height: 1; font-weight: 400; transition: transform .18s ease; }
 .plan-link:hover span { transform: translate(3px, -3px); }
@@ -385,9 +419,8 @@ details[open] .detail-toggle::after { transform: none; }
   .pricing-heading { align-items: start; flex-direction: column; gap: 24px; padding-top: 40px; padding-bottom: 30px; }
   .pricing h2 { font-size: clamp(63px, 13vw, 91px); }
   .pricing-heading > p { font-size: 14px; }
-  .plans { grid-template-columns: 1fr; }
+  .plans { grid-template-columns: 1fr; gap: 24px; }
   .plan { padding: 26px 26px 0; }
-  .plan + .plan { border-left: 0; border-top: 1px solid var(--ink); }
   .plan h3 { font-size: clamp(45px, 14vw, 64px); min-height: auto; margin-top: 30px; }
   .plan h3 br { display: none; }
   .plan-student h3 { min-height: 103px; }
@@ -439,6 +472,18 @@ html.spark-smooth { scroll-behavior: auto; }
 .button > span, .nav-cta > span, .text-link > span { transition: transform .35s cubic-bezier(.22, 1, .36, 1); }
 .detail-toggle::after { transition: transform .28s ease; }
 
+@media (min-width: 701px) and (hover: hover) and (pointer: fine) {
+  .plans:has(.plan:hover) .plan:not(:hover) {
+    translate: 0 8px; scale: .98; background: var(--paper);
+  }
+  .plans:has(.plan:hover) .plan:not(:hover) li { border-color: #b9b8a9; }
+  .plan:hover {
+    z-index: 2; translate: 0 -14px; scale: 1.035; background: var(--yellow);
+    box-shadow: 0 12px 0 var(--ink), 0 22px 28px #1415101a;
+  }
+  .plan:hover li { border-color: #b6a436; }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .button:hover, .nav-cta:hover { transform: translateY(-2px); }
   .button:hover > span, .nav-cta:hover > span { transform: translate(2px, -2px); }
@@ -448,6 +493,7 @@ html.spark-smooth { scroll-behavior: auto; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition: none !important; animation: none !important; }
+  .plan { translate: none !important; scale: none !important; }
   .poster-illustration > img, .motion-depth .poster-illustration > img { transform: scale(1.035); }
   .aperture-art > svg, .button:hover, .nav-cta:hover,
   .button:hover > span, .nav-cta:hover > span, .text-link:hover > span,

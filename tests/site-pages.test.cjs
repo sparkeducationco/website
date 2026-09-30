@@ -31,9 +31,11 @@ test("all routes share navigation, local motion assets and semantic page landmar
     assert.equal(menu["aria-controls"], "primary-nav");
     assert.equal(menu["aria-expanded"], "false");
     assert.deepEqual(tags(html, "script").map((tag) => tag.src), [
+      "/site-navigation.js",
       "/script.js", "/site.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
     ], `${page}: common scripts execute in dependency order`);
-    for (const script of tags(html, "script")) assert.ok("defer" in script);
+    for (const script of tags(html, "script").slice(1)) assert.ok("defer" in script);
+    assert.ok(html.indexOf('/site-navigation.js') < html.indexOf('</head>'), "entry initialization precedes first paint");
     const styles = tags(html, "link").filter((tag) => tag.rel === "stylesheet").map((tag) => tag.href);
     assert.deepEqual(styles, page ? ["/site.css", "/pages.css"] : ["/site.css"]);
     assert.ok(!html.includes("/homepage") && !html.includes('href="/styles.css"'), "no obsolete styling/motion references");
@@ -46,6 +48,13 @@ test("all routes share navigation, local motion assets and semantic page landmar
       assert.equal(image.alt, "");
       assert.ok(Number(image.width) > 0 && Number(image.height) > 0);
     }
+  }
+});
+
+test("interior Home buttons navigate to the homepage route while Home on the homepage scrolls", () => {
+  assert.match(htmlFor(""), /<a href="#main"[^>]*>Home<\/a>/);
+  for (const page of pages.filter(Boolean)) {
+    assert.match(htmlFor(page), /<a href="\/">Home<\/a>/, `${page}: Home uses document navigation, not a fragment`);
   }
 });
 

@@ -16,7 +16,8 @@
   let introPlayed = false;
 
   const animate = (element, keyframes, options = {}) => {
-    if (!element || reducedMotion.matches || typeof element.animate !== "function") return;
+    if (!element || reducedMotion.matches || root.classList.contains("spark-page-entering") ||
+        typeof element.animate !== "function") return;
     const animation = element.animate(keyframes, {
       duration: 850,
       easing: "cubic-bezier(.22, 1, .36, 1)",
@@ -200,6 +201,11 @@
   };
 
   document.addEventListener("click", (event) => {
+    if (root.classList.contains("spark-page-leaving")) {
+      cancelScroll();
+      settlePageEntrance();
+      return;
+    }
     if (!scroller || event.defaultPrevented || event.button !== 0 ||
         event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : null;
@@ -258,6 +264,17 @@
   }, { passive: true });
   window.addEventListener("hashchange", cancelScroll);
   window.addEventListener("popstate", cancelScroll);
+  const settlePageEntrance = () => {
+    // The document slide replaces entrance reveals in the incoming viewport.
+    introPlayed = true;
+    for (const animation of animations) animation.cancel();
+    for (const element of revealTargets) {
+      const bounds = element.getBoundingClientRect();
+      if (bounds.bottom <= 0 || bounds.top >= window.innerHeight) continue;
+      seen.add(element);
+      observer?.unobserve(element);
+    }
+  };
   window.addEventListener("pagehide", () => {
     suspended = true;
     syncMotion();
@@ -273,5 +290,6 @@
   reducedMotion.addEventListener("change", syncMotion);
   desktopPointer.addEventListener("change", syncMotion);
   syncMotion();
+  if (root.classList.contains("spark-page-entering")) settlePageEntrance();
   playIntro();
 })();

@@ -168,7 +168,8 @@ test("every header links to each homepage section and both main interior pages",
     }));
     assert.equal(links.length, 9, `${page || "home"}: nine navigation destinations`);
     for (const [label, id] of Object.entries(sections)) {
-      assert.equal(links.find((link) => link.label === label)?.href, `${page ? "/" : ""}#${id}`, `${page || "home"}: ${label}`);
+      const expected = page && label === "Home" ? "/" : `${page ? "/" : ""}#${id}`;
+      assert.equal(links.find((link) => link.label === label)?.href, expected, `${page || "home"}: ${label}`);
     }
     assert.equal(links.find((link) => link.label === "Our story")?.href, "/about/");
     assert.equal(links.find((link) => link.label.replace("’", "'") === "Let's talk")?.href, "/contact/");

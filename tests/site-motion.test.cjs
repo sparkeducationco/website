@@ -30,7 +30,7 @@ class Events {
   }
 }
 
-function createHarness({ reduced = false, desktop = true, hidden = false, hash = "", scrollY = 0, lenis = true, intersection = true, waapi = true, page = "home" } = {}) {
+function createHarness({ reduced = false, desktop = true, hidden = false, hash = "", scrollY = 0, lenis = true, intersection = true, waapi = true, page = "home", entering = false } = {}) {
   const animationRecords = [];
   const observers = [];
   const instances = [];
@@ -119,6 +119,7 @@ function createHarness({ reduced = false, desktop = true, hidden = false, hash =
   }
 
   const root = new Element("html");
+  if (entering) root.classList.add("spark-page-entering");
   const main = new Element("main", [], root);
   const solution = new Element("section", [], main);
   const pricing = new Element("section", [], main);
@@ -764,4 +765,45 @@ test("about artwork depth stays bounded and focus exposes its introductory conte
   assert.equal(h.activeAnimations(h.innerHero).length, 0);
   h.observers.at(-1).enter(h.innerHero);
   assert.equal(h.activeAnimations(h.innerHero).length, 0);
+});
+
+test("document slides replace viewport entrances but retain below-fold reveals", () => {
+  const h = createHarness({ page: "privacy" });
+  h.policySection.bounds = { top: 1300, bottom: 1600, height: 300 };
+  h.root.classList.add("spark-page-leaving");
+  h.document.dispatch("click", { target: h.heroButton, defaultPrevented: true });
+  assert.ok(h.animationRecords.every((animation) => animation.cancelled));
+  h.observers.at(-1).enter(h.privacyHero);
+  assert.equal(h.activeAnimations(h.privacyHero).length, 0);
+  h.observers.at(-1).enter(h.policySection);
+  assert.equal(h.activeAnimations(h.policySection).length, 1);
+});
+
+test("ordinary loads without a document transition keep their entrance animations", () => {
+  const h = createHarness({ page: "contact" });
+  assert.equal(h.activeAnimations(h.contactForm).length, 1);
+});
+
+test("outgoing document slides never retain partially faded reveal content", () => {
+  const h = createHarness({ page: "privacy" });
+  h.observers.at(-1).enter(h.policySection);
+  assert.equal(h.activeAnimations(h.policySection).length, 1);
+  h.root.classList.add("spark-page-leaving");
+  h.document.dispatch("click", { target: h.heroButton, defaultPrevented: true });
+  assert.ok(h.animationRecords.every((animation) => animation.cancelled));
+});
+
+test("fallback departures settle reveal animations without starting section scrolling", () => {
+  const h = createHarness();
+  h.root.classList.add("spark-page-leaving");
+  h.document.dispatch("click", { target: h.heroButton, defaultPrevented: true });
+  assert.ok(h.animationRecords.every((animation) => animation.cancelled));
+  assert.equal(h.scroller.scrollCalls.length, 0);
+});
+
+test("fallback entries use only the document slide in the incoming viewport", () => {
+  const h = createHarness({ page: "contact", entering: true });
+  assert.equal(h.animationRecords.length, 0);
+  h.observers.at(-1).enter(h.contactForm);
+  assert.equal(h.animationRecords.length, 0);
 });

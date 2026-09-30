@@ -63,9 +63,15 @@
   padding: 11px 12px; color: var(--ink); background: var(--paper); font: 400 16px/1.5 Manrope, Arial, sans-serif;
   transition: border-color .2s ease, background .2s ease; box-shadow: none;
 }
+.contact-form select {
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  padding-right: 44px;
+  background-image: url("/assets/select-chevron.svg");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 16px;
+}
 .contact-form textarea { min-height: 160px; resize: vertical; }
 .contact-form ::placeholder { color: #646657; opacity: 1; font-size: 13px; }
-.contact-form input:focus-visible, .contact-form select:focus-visible, .contact-form textarea:focus-visible { border-color: var(--ink); outline: 2px solid var(--ink); outline-offset: 2px; background: #fffdf5; }
+.contact-form input:focus-visible, .contact-form select:focus-visible, .contact-form textarea:focus-visible { border-color: var(--ink); outline: 2px solid var(--ink); outline-offset: 2px; background-color: #fffdf5; }
 .contact-form .button { margin-top: 27px; width: 100%; cursor: pointer; }
 .contact-form .button:disabled { cursor: wait; opacity: .65; transform: none; }
 .contact-form .button:disabled > span { transform: none; }
