@@ -14,14 +14,24 @@
 
   let timeout = null;
   let headerTimeout = null;
+  const soundPreferenceKey = "spark-home-intro-sound";
+  let soundEnabled = false;
+  let autoplayBlocked = false;
   const playIntroSound = async () => {
     const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextConstructor) return;
+    if (!AudioContextConstructor) return false;
 
     let context;
     try {
       context = new AudioContextConstructor();
-      await context.resume();
+      await Promise.race([
+        context.resume(),
+        new Promise((resolve) => window.setTimeout(resolve, 500)),
+      ]);
+      if (context.state !== "running") {
+        await context.close();
+        return false;
+      }
       const start = context.currentTime;
       [
         { from: 392, to: 587, delay: 0, level: 0.045 },
@@ -42,8 +52,10 @@
         oscillator.stop(noteStart + 0.9);
       });
       window.setTimeout(() => context.close(), 1400);
+      return true;
     } catch {
       context?.close();
+      return false;
     }
   };
   const clearHeaderReveal = () => {
@@ -70,12 +82,49 @@
     // If CSS or animation events fail, never leave a curtain over the page.
     if (root.classList.contains("spark-home-intro")) timeout = window.setTimeout(() => finish(), 2400);
     const soundButton = document.querySelector(".home-intro-sound");
+    const soundLabel = soundButton?.querySelector(".home-intro-sound-label");
+    try {
+      soundEnabled = window.localStorage.getItem(soundPreferenceKey) === "enabled";
+    } catch {
+      // Sound remains available as a one-time choice when storage is unavailable.
+    }
+    const updateSoundButton = () => {
+      if (!soundButton || !soundLabel) return;
+      soundButton.setAttribute("aria-pressed", String(soundEnabled));
+      soundLabel.textContent = !soundEnabled ? "Sound off" : autoplayBlocked ? "Tap for sound" : "Sound on";
+      soundButton.setAttribute(
+        "aria-label",
+        !soundEnabled ? "Enable intro sound" : autoplayBlocked ? "Play intro sound" : "Turn intro sound off",
+      );
+    };
+    updateSoundButton();
+    if (soundEnabled && root.classList.contains("spark-home-intro")) {
+      playIntroSound().then((played) => {
+        autoplayBlocked = !played;
+        updateSoundButton();
+      });
+    }
     soundButton?.addEventListener("click", async () => {
       if (!root.classList.contains("spark-home-intro")) return;
-      await playIntroSound();
-      soundButton.querySelector(".home-intro-sound-label").textContent = "Replay intro sound";
-      soundButton.setAttribute("aria-label", "Replay intro sound");
-    }, { once: false });
+      if (soundEnabled && !autoplayBlocked) {
+        soundEnabled = false;
+        try {
+          window.localStorage.removeItem(soundPreferenceKey);
+        } catch {
+          // Keep the in-memory preference for this intro if storage is unavailable.
+        }
+      } else {
+        soundEnabled = true;
+        autoplayBlocked = false;
+        try {
+          window.localStorage.setItem(soundPreferenceKey, "enabled");
+        } catch {
+          // The choice still applies for this intro if storage is unavailable.
+        }
+        autoplayBlocked = !(await playIntroSound());
+      }
+      updateSoundButton();
+    });
   }, { once: true });
   for (const type of ["pointerdown", "touchstart", "wheel"]) {
     document.addEventListener(type, (event) => {
