@@ -2,76 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <meta name="description" content="About Spark Education Technology" />
-    <title>About | Spark Education Technology</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7df48" />
+    <meta name="description" content="Meet the security researchers building Spark Filter and learn why we believe school filtering should keep pace with the web." />
+    <title>Our Story | Spark Filter</title>
     <link rel="icon" href="/icon.png" />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preload" href="/assets/fonts/instrument-serif-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/spark-field.webp" as="image" />
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/pages.css" />
   </head>
-  <body class="about-page">
+  <body class="inner-page about-page">
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
-      <a class="brand" href="/"
-        ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
-        ><span>Spark Filter</span></a
-      ><button
+      <a class="brand" href="/" aria-label="Spark Filter home">
+        <img class="brand-icon" src="/icon.png" width="36" height="36" alt="" />
+        <span>Spark Filter</span>
+      </a>
+      <button
         class="menu-toggle"
+        type="button"
         aria-label="Toggle navigation"
         aria-expanded="false"
+        aria-controls="primary-nav"
       >
         Menu
       </button>
-      <nav class="nav">
-        <a href="/#solution">Platform</a
-        ><a href="/#how-it-works">How it works</a><a href="/#pricing">Pricing</a
-        ><a href="/about/">About</a
-        ><a href="/contact/" class="nav-cta">Request a demo →</a>
+      <nav class="nav" id="primary-nav" aria-label="Primary navigation">
+        <a href="/#main">Home</a>
+        <a href="/#solution">The platform</a>
+        <a href="/#district-life">For districts</a>
+        <a href="/#how-it-works">How it works</a>
+        <a href="/#pilot">Try Spark</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/#questions">FAQs</a>
+        <a href="/about/" aria-current="page">Our story</a>
+        <a href="/contact/" class="nav-cta">Let's talk <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
-    <main>
-      <section class="about-hero">
-        <div>
-          <p class="eyebrow"><span class="pulse"></span> About Spark Education Technology</p>
-          <h1>Built for the browser<br />students <em>actually use.</em></h1>
+    <main id="main">
+      <section class="inner-hero page-section" aria-labelledby="about-title">
+        <div class="inner-hero-copy">
+          <p class="eyebrow"><span class="small-star" aria-hidden="true">✳</span> Our story</p>
+          <h1 id="about-title">We know the web<br />from the <span>inside out.</span></h1>
+          <p>Spark was founded by security researchers with direct experience building and studying the technologies that shape how students move through the web.</p>
         </div>
-        <p class="about-hero-copy">Spark helps K–12 districts keep up with browser-based bypasses and games through detection that starts where the behavior happens: in the browser.</p>
+        <figure class="inner-hero-art">
+          <img src="/assets/spark-field.webp" width="1536" height="1024" alt="An engraved landscape crossed by a bright path of light." fetchpriority="high" decoding="async" />
+          <figcaption><span>Built with perspective.</span><span>SPARK / 002</span></figcaption>
+        </figure>
       </section>
 
-      <section class="about-origin">
+      <section class="about-origin page-section" aria-labelledby="origin-title">
         <div class="about-origin-label"><span>01</span><p>Why Spark exists</p></div>
         <div class="about-origin-copy">
-          <h2>School filtering needs a more complete signal.</h2>
-          <p>Traditional filters were designed around destinations. But modern bypasses use browser runtimes, frames, scripts, and changing infrastructure to hide the behavior that matters.</p>
-          <p>Spark was founded by security researchers with direct experience studying and building the technologies schools need to recognize. We built the product around that practical understanding—not around a larger domain list.</p>
+          <h2 id="origin-title">The web changed.<br />School filtering should, too.</h2>
+          <p class="large-copy">Students encounter a fast-moving web. District teams deserve protection designed with that reality in mind.</p>
+          <p>Our team has firsthand experience with the tools and techniques behind modern filter circumvention. That perspective led us to build a more responsive approach—one that helps districts stay ahead without asking their teams to chase every new workaround.</p>
         </div>
       </section>
 
-      <section class="about-principles">
-        <div class="about-principles-head"><p class="section-label">How we build</p><h2>Technology with district realities in mind.</h2></div>
+      <section class="about-principles page-section" aria-labelledby="principles-title">
+        <div class="section-meta"><span>02 — How we build</span><span>Made for district realities</span></div>
+        <div class="about-principles-head"><h2 id="principles-title">Thoughtful by design.<br /><span>Practical by nature.</span></h2><p>Clear decisions, considered privacy, and technology that fits the environment schools already manage.</p></div>
         <div class="about-principles-grid">
-          <article><span>01</span><h3>Browser-native</h3><p>Detection runs locally in the managed browser, where the relevant runtime and page signals are available.</p></article>
-          <article><span>02</span><h3>Operationally clear</h3><p>District teams get decisions grounded in observable behavior and managed policy—not a black-box score.</p></article>
-          <article><span>03</span><h3>Privacy-aware</h3><p>Spark is designed to make local detection decisions without using page-level browsing telemetry as a product input.</p></article>
+          <article><span>01</span><h3>Keep pace.</h3><p>Protection should evolve alongside the web—not wait for yesterday's lists to catch up.</p></article>
+          <article><span>02</span><h3>Make it clear.</h3><p>District teams should understand what Spark decides and manage the policies behind it.</p></article>
+          <article><span>03</span><h3>Respect the classroom.</h3><p>Privacy, focus, and student access belong in the product conversation from the start.</p></article>
         </div>
       </section>
 
-      <section class="about-mission">
-        <p class="section-label">Our mission</p>
-        <h2>Keep students safe online<br />with detection that <em>keeps up.</em></h2>
-        <p>Students deserve useful access to the web. Districts deserve dependable controls that evolve with the environment they manage.</p>
-        <a class="button button-primary" href="/contact/">Talk with Spark <span>→</span></a>
+      <section class="about-mission page-section" aria-labelledby="mission-title">
+        <div class="section-meta"><span>03 — Our mission</span><span aria-hidden="true">↗</span></div>
+        <h2 id="mission-title">Keep students safe online<br />with protection that <span>keeps up.</span></h2>
+        <div><p>Students deserve room to explore. Districts deserve dependable controls that move with the environment they manage.</p><a class="button button-ink" href="/contact/">Start a conversation <span aria-hidden="true">↗</span></a></div>
       </section>
     </main>
-    <footer>
-      <a class="brand" href="/"
-        ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
-        ><span>Spark Filter</span></a
-      >
-      <p>© 2026 Spark Education Technology</p>
-      <div>
-        <a href="/privacy/">Privacy Policy</a
-        ><a href="/terms/">Terms of Service</a>
+    <footer class="site-footer">
+      <div class="footer-top">
+        <a class="brand" href="/" aria-label="Spark Filter home"><img class="brand-icon" src="/icon.png" width="36" height="36" alt="" /><span>Spark Filter</span></a>
+        <p>Sparking your education.</p>
+        <a href="mailto:contact@sparkforschools.com">Say hello <span aria-hidden="true">↗</span></a>
       </div>
+      <div class="footer-bottom"><p>© 2026 Spark Education Technology</p><nav aria-label="Footer navigation"><a href="/about/" aria-current="page">About</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a></nav><a href="#main">Back to top <span aria-hidden="true">↑</span></a></div>
     </footer>
-    <script src="/script.js"></script>
+    <script src="/script.js" defer></script>
+    <script src="/site.js" defer></script>
+    <script src="/assets/vendor/lenis-1.3.26.min.js" defer></script>
+    <script src="/site-motion.js" defer></script>
   </body>
 </html>

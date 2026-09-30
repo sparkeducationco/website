@@ -3,38 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7df48" />
     <meta name="description" content="Spark Filter Terms of Service" />
     <title>Terms of Service | Spark Education Technology</title>
     <link rel="icon" href="/icon.png" />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="preload" href="/assets/fonts/instrument-serif-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/pages.css" />
   </head>
-  <body class="privacy-page terms-page">
+  <body class="inner-page legal-page privacy-page terms-page">
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
-      <a class="brand" href="/"
-        ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
-        ><span>Spark Filter</span></a
-      >
-      <button
-        class="menu-toggle"
-        aria-label="Toggle navigation"
-        aria-expanded="false"
-      >
-        Menu
-      </button>
-      <nav class="nav">
-        <a href="/">Home</a>
-        <a href="/about/">About</a>
-        <a href="/contact/" class="nav-cta">Request a demo →</a>
+      <a class="brand" href="/" aria-label="Spark Filter home">
+        <img class="brand-icon" src="/icon.png" width="36" height="36" alt="" />
+        <span>Spark Filter</span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+      <nav class="nav" id="primary-nav" aria-label="Primary navigation">
+        <a href="/#main">Home</a>
+        <a href="/#solution">The platform</a>
+        <a href="/#district-life">For districts</a>
+        <a href="/#how-it-works">How it works</a>
+        <a href="/#pilot">Try Spark</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/#questions">FAQs</a>
+        <a href="/about/">Our story</a>
+        <a href="/contact/" class="nav-cta">Let's talk <span aria-hidden="true">↗</span></a>
       </nav>
     </header>
 
-    <main>
-      <section class="privacy-hero grid-bg">
+    <main id="main">
+      <section class="privacy-hero" aria-labelledby="terms-title">
         <div class="privacy-hero-inner">
           <p class="eyebrow">
-            <span class="pulse"></span> Spark Filter / Legal
+            Spark Filter / Legal
           </p>
-          <h1>Terms of <em>Service.</em></h1>
+          <h1 id="terms-title">Terms of Service</h1>
           <p>
             The institutional agreement for access to Spark Filter and related
             services.
@@ -46,12 +50,15 @@
             ><span>Business address: 1209 Mountain Road Pl NE, Ste 12292, Albuquerque, NM 87110</span>
           </div>
         </div>
-        <div class="privacy-orbit" aria-hidden="true"><span>ϟ</span></div>
+        <div class="legal-stamp" aria-hidden="true">
+          <span>Spark</span><strong>Terms</strong><span>Agreement / 002</span>
+        </div>
       </section>
 
       <section class="privacy-content">
-        <aside class="policy-nav">
+        <aside class="policy-nav" aria-label="Terms of service contents">
           <p>On this page</p>
+          <nav aria-label="Terms of service sections">
           <a href="#acceptance">Acceptance &amp; authority</a>
           <a href="#service">The service</a>
           <a href="#responsibilities">School responsibilities</a>
@@ -65,11 +72,12 @@
           <a href="#warranties">Warranties &amp; liability</a>
           <a href="#changes">Changes to these Terms</a>
           <a href="#general">General provisions</a>
+          </nav>
         </aside>
 
         <article class="policy-document terms-document">
           <div class="policy-intro">
-            <span class="document-mark">ϟ</span>
+            <img class="document-mark" src="/icon.png" width="36" height="36" alt="" />
             <p>
               These Terms govern access to and use of Spark Filter, including
               its browser extension and any related services provided under an
@@ -442,17 +450,17 @@
       </section>
     </main>
 
-    <footer>
-      <a class="brand" href="/"
-        ><img class="brand-icon" src="/icon.png" alt="" aria-hidden="true"
-        ><span>Spark Filter</span></a
-      >
-      <p>© 2026 Spark Education Technology</p>
-      <div>
-        <a href="/privacy/">Privacy Policy</a
-        ><a href="/terms/">Terms of Service</a>
+    <footer class="site-footer">
+      <div class="footer-top">
+        <a class="brand" href="/" aria-label="Spark Filter home"><img class="brand-icon" src="/icon.png" width="36" height="36" alt="" /><span>Spark Filter</span></a>
+        <p>Sparking your education.</p>
+        <a href="mailto:contact@sparkforschools.com">Say hello <span aria-hidden="true">↗</span></a>
       </div>
+      <div class="footer-bottom"><p>© 2026 Spark Education Technology</p><nav aria-label="Footer navigation"><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/privacy/">Privacy Policy</a><a href="/terms/" aria-current="page">Terms of Service</a></nav><a href="#main">Back to top <span aria-hidden="true">↑</span></a></div>
     </footer>
-    <script src="/script.js"></script>
+    <script src="/script.js" defer></script>
+    <script src="/site.js" defer></script>
+    <script src="/assets/vendor/lenis-1.3.26.min.js" defer></script>
+    <script src="/site-motion.js" defer></script>
   </body>
 </html>
