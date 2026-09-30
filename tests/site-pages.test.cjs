@@ -33,12 +33,12 @@ test("all routes share navigation, local motion assets and semantic page landmar
     assert.deepEqual(tags(html, "script").map((tag) => tag.src), [
       "/site-navigation.js",
       ...(!page ? ["/home-intro.js"] : []),
-      "/script.js", "/site.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
+      "/script.js", "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
     ], `${page}: common scripts execute in dependency order`);
     for (const script of tags(html, "script").filter((tag) => !["/site-navigation.js", "/home-intro.js"].includes(tag.src))) assert.ok("defer" in script);
     assert.ok(html.indexOf('/site-navigation.js') < html.indexOf('</head>'), "entry initialization precedes first paint");
     const styles = tags(html, "link").filter((tag) => tag.rel === "stylesheet").map((tag) => tag.href);
-    assert.deepEqual(styles, page ? ["/site.css", "/pages.css"] : ["/site.css"]);
+    assert.deepEqual(styles, page ? ["/site.css?v=20260930-intro-rays", "/pages.css"] : ["/site.css?v=20260930-intro-rays"]);
     assert.ok(!html.includes("/homepage") && !html.includes('href="/styles.css"'), "no obsolete styling/motion references");
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(([, id]) => id);
     assert.equal(ids.length, new Set(ids).size, `${page}: unique IDs`);
@@ -69,7 +69,7 @@ test("the presentation-only introduction exists on the homepage and nowhere else
 
 test("homepage doodles are lightweight decorative artwork", () => {
   const doodles = tags(htmlFor(""), "svg").filter((tag) => tag.class?.includes("editorial-doodle"));
-  assert.equal(doodles.length, 4);
+  assert.equal(doodles.length, 8);
   for (const doodle of doodles) {
     assert.equal(doodle["aria-hidden"], "true");
     assert.equal(doodle.focusable, "false");

@@ -6,6 +6,11 @@ const vm = require("node:vm");
 
 const source = fs.readFileSync(path.join(__dirname, "../site-navigation.js"), "utf8");
 
+test("incoming document slides disable native smooth fragment scrolling", () => {
+    const css = fs.readFileSync(path.join(__dirname, "../site.css"), "utf8");
+    assert.match(css, /\.spark-page-entering\s*\{[^}]*scroll-behavior:\s*auto/);
+});
+
 function harness({ href = "https://spark.test/", reduced = false, native = false,
     storageBlocked = false, entry = null, hidden = false, navigationFails = false, initialTime = 50000 } = {}) {
     class Events {

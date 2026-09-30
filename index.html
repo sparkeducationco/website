@@ -27,7 +27,7 @@
     <link rel="preload" href="/assets/fonts/instrument-serif-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/assets/spark-field.webp" as="image" />
     <script src="/home-intro.js"></script>
-    <link rel="stylesheet" href="/site.css" />
+    <link rel="stylesheet" href="/site.css?v=20260930-intro-rays" />
   </head>
   <body class="home-page">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -55,7 +55,22 @@
         <circle cx="240" cy="240" r="104" />
         <circle cx="240" cy="240" r="164" />
         <circle cx="240" cy="240" r="220" />
-        <path d="M240 4V476M4 240H476M73 73L407 407M73 407L407 73M149 22L331 458M22 149L458 331M22 331L458 149M149 458L331 22" />
+        <path class="home-intro-ray" style="--ray-x: 0; --ray-y: -1" d="M240 240V4" />
+        <path class="home-intro-ray" style="--ray-x: .383; --ray-y: -.924" d="M240 240L331 22" />
+        <path class="home-intro-ray" style="--ray-x: .707; --ray-y: -.707" d="M240 240L407 73" />
+        <path class="home-intro-ray" style="--ray-x: .924; --ray-y: -.383" d="M240 240L458 149" />
+        <path class="home-intro-ray" style="--ray-x: 1; --ray-y: 0" d="M240 240H476" />
+        <path class="home-intro-ray" style="--ray-x: .924; --ray-y: .383" d="M240 240L458 331" />
+        <path class="home-intro-ray" style="--ray-x: .707; --ray-y: .707" d="M240 240L407 407" />
+        <path class="home-intro-ray" style="--ray-x: .383; --ray-y: .924" d="M240 240L331 458" />
+        <path class="home-intro-ray" style="--ray-x: 0; --ray-y: 1" d="M240 240V476" />
+        <path class="home-intro-ray" style="--ray-x: -.383; --ray-y: .924" d="M240 240L149 458" />
+        <path class="home-intro-ray" style="--ray-x: -.707; --ray-y: .707" d="M240 240L73 407" />
+        <path class="home-intro-ray" style="--ray-x: -.924; --ray-y: .383" d="M240 240L22 331" />
+        <path class="home-intro-ray" style="--ray-x: -1; --ray-y: 0" d="M240 240H4" />
+        <path class="home-intro-ray" style="--ray-x: -.924; --ray-y: -.383" d="M240 240L22 149" />
+        <path class="home-intro-ray" style="--ray-x: -.707; --ray-y: -.707" d="M240 240L73 73" />
+        <path class="home-intro-ray" style="--ray-x: -.383; --ray-y: -.924" d="M240 240L149 22" />
       </svg>
       <div class="home-intro-identity"><img src="/icon.png" width="36" height="36" alt="" /><span>Education Technology</span></div>
       <div class="home-intro-title"><span>Spark</span><span>Filter</span></div>
@@ -146,6 +161,10 @@
               </details>
             </div>
             <a class="button button-yellow" href="/contact/">See Spark in action <span aria-hidden="true">↗</span></a>
+            <svg class="editorial-doodle doodle-glimmer" viewBox="0 0 80 64" fill="none" aria-hidden="true" focusable="false">
+              <path d="M38 7C37 24 30 31 13 32C30 33 37 40 38 57C39 40 46 33 63 32C46 31 39 24 38 7Z" />
+              <path d="M68 5V17M62 11H74M10 48V56M6 52H14" />
+            </svg>
           </div>
         </div>
       </section>
@@ -174,6 +193,11 @@
           </article>
         </div>
         <div class="district-footnote"><p>To see district reports, devices need to be registered with your district and set up to send them.</p><a class="text-link" href="#how-it-works">See how to get started <span aria-hidden="true">↓</span></a></div>
+        <svg class="editorial-doodle doodle-constellation" viewBox="0 0 144 58" fill="none" aria-hidden="true" focusable="false">
+          <path d="M14 42L49 15L92 39L129 12" stroke-dasharray="2 5" />
+          <circle cx="14" cy="42" r="4" /><circle cx="49" cy="15" r="3" fill="currentColor" /><circle cx="92" cy="39" r="5" />
+          <path d="M129 3L131 10L138 12L131 14L129 21L127 14L120 12L127 10Z" />
+        </svg>
       </section>
 
       <section class="deployment page-section" id="how-it-works" aria-labelledby="deployment-title">
@@ -227,6 +251,10 @@
       <section class="pricing page-section" id="pricing" aria-labelledby="pricing-title">
         <div class="section-meta"><span>06 — Find your fit</span><a href="/contact/">Questions? Talk to a human <span aria-hidden="true">↗</span></a></div>
         <div class="pricing-heading"><h2 id="pricing-title">Big possibilities.<br />Clear pricing.</h2><p>Start with your students.<br />We'll work out the rest together.</p></div>
+        <svg class="editorial-doodle doodle-ripple" viewBox="0 0 150 44" fill="none" aria-hidden="true" focusable="false">
+          <path d="M8 15C22 3 34 3 48 15S74 27 88 15S114 3 128 15M8 28C22 16 34 16 48 28S74 40 88 28S114 16 128 28" />
+          <circle cx="141" cy="10" r="2" fill="currentColor" stroke="none" />
+        </svg>
         <div class="plans">
           <article class="plan plan-student">
             <p class="plan-label">01 / Per student</p>
@@ -307,6 +335,10 @@
       <section class="closing page-section" aria-labelledby="closing-title">
         <div class="section-meta"><span>A little spark goes a long way.</span><span aria-hidden="true">↗</span></div>
         <h2 id="closing-title">Here's to<br /><span>what's next.</span></h2>
+        <svg class="editorial-doodle doodle-comet" viewBox="0 0 160 66" fill="none" aria-hidden="true" focusable="false">
+          <path d="M9 54C45 53 74 34 108 18M26 59C61 52 79 41 106 25M15 40C45 37 66 25 92 14" />
+          <path d="M125 5L129 21L146 17L135 30L148 42L130 39L124 56L120 39L103 43L114 30L103 18L120 21Z" />
+        </svg>
         <div class="closing-bottom"><p>A safer space for the next big idea.<br />See what Spark can do for your district.</p><a class="button button-ink" href="/contact/">Let's start a conversation <span aria-hidden="true">↗</span></a></div>
       </section>
     </main>
@@ -321,6 +353,7 @@
     </footer>
     <script src="/script.js" defer></script>
     <script src="/site.js" defer></script>
+    <script src="/button-sparks.js" defer></script>
     <script src="/assets/vendor/lenis-1.3.26.min.js" defer></script>
     <script src="/site-motion.js" defer></script>
   </body>
