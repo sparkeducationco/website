@@ -66,10 +66,13 @@ test("the curtain finishing removes the overlay without interrupting the hero re
     h.document.dispatch("animationend", { animationName: "spark-intro-word" });
     assert.ok(h.classes.has("spark-home-intro"));
     h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
-    assert.equal(h.classes.size, 0);
-    assert.equal(h.timers.size, 0);
+    assert.equal(h.classes.has("spark-home-intro"), false);
+    assert.ok(h.classes.has("spark-home-header-reveal"));
     assert.equal(h.completions.length, 1);
     assert.equal(h.completions[0].detail.interrupted, false);
+    h.document.dispatch("animationend", { animationName: "spark-intro-header" });
+    assert.equal(h.classes.size, 0);
+    assert.equal(h.timers.size, 0);
 });
 
 test("scrolling, touch, keyboard and pointer input dismiss immediately without consuming input", () => {
@@ -117,6 +120,25 @@ test("blocked storage and missing animation events never strand the curtain", ()
     assert.ok(h.classes.has("spark-home-intro"));
     h.document.dispatch("DOMContentLoaded");
     [...h.timers.values()][0].callback();
+    assert.equal(h.classes.has("spark-home-intro"), false);
+    [...h.timers.values()][0].callback();
+    assert.equal(h.classes.size, 0);
+    assert.equal(h.timers.size, 0);
+});
+
+test("interrupting the intro exposes the header immediately without a delayed entrance", () => {
+    const h = harness();
+    h.document.dispatch("keydown", { key: "Tab" });
+    assert.equal(h.classes.has("spark-home-intro"), false);
+    assert.equal(h.classes.has("spark-home-header-reveal"), false);
+    assert.equal(h.timers.size, 0);
+});
+
+test("navigation during the header reveal clears its transform before leaving", () => {
+    const h = harness();
+    h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+    assert.ok(h.classes.has("spark-home-header-reveal"));
+    h.window.dispatch("pagehide");
     assert.equal(h.classes.size, 0);
     assert.equal(h.timers.size, 0);
 });

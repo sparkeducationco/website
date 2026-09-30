@@ -13,15 +13,26 @@
   }
 
   let timeout = null;
+  let headerTimeout = null;
+  const clearHeaderReveal = () => {
+    root.classList.remove("spark-home-header-reveal");
+    window.clearTimeout(headerTimeout);
+  };
   root.classList.add("spark-home-intro");
   const finish = (interrupted = false) => {
+    if (interrupted) clearHeaderReveal();
     if (!root.classList.contains("spark-home-intro")) return;
     root.classList.remove("spark-home-intro");
     window.clearTimeout(timeout);
+    if (!interrupted && !reducedMotion.matches) {
+      root.classList.add("spark-home-header-reveal");
+      headerTimeout = window.setTimeout(clearHeaderReveal, 650);
+    }
     window.dispatchEvent(new CustomEvent("spark:home-intro-end", { detail: { interrupted } }));
   };
   document.addEventListener("animationend", (event) => {
     if (event.animationName === "spark-intro-curtain") finish();
+    if (event.animationName === "spark-intro-header") clearHeaderReveal();
   });
   document.addEventListener("DOMContentLoaded", () => {
     // If CSS or animation events fail, never leave a curtain over the page.
