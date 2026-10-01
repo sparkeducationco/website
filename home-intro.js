@@ -24,6 +24,39 @@
   const closeAudio = (context) => {
     if (context && context.state !== "closed") context.close().catch(() => {});
   };
+  const scheduleWhoosh = (context) => {
+    if (!root.classList.contains("spark-home-intro")) return 0;
+    const animation = document.querySelector(".home-intro-ray")?.getAnimations?.()
+      .find((effect) => effect.animationName === "spark-intro-ray");
+    const animationDuration = Number(animation?.effect?.getTiming().duration) || 1800;
+    const elapsed = Number(animation?.currentTime) || 0;
+    const delay = Math.max(0, animationDuration * 0.48 - elapsed) / 1000;
+    const duration = Math.min(1, (animationDuration - elapsed) / 1000 - delay);
+    if (duration < 0.05) return 0;
+
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    const noise = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    const start = context.currentTime + delay;
+    noise.buffer = buffer;
+    filter.type = "bandpass";
+    filter.Q.value = 0.65;
+    filter.frequency.setValueAtTime(380, start);
+    filter.frequency.exponentialRampToValueAtTime(2200, start + duration * 0.65);
+    filter.frequency.exponentialRampToValueAtTime(900, start + duration);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.12, start + duration * 0.38);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+    noise.start(start);
+    noise.stop(start + duration);
+    return delay + duration;
+  };
   const playIntroSound = async () => {
     const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextConstructor) return false;
@@ -61,7 +94,8 @@
         closeAudio(context);
         return false;
       }
-      window.setTimeout(() => closeAudio(context), 1400);
+      const whooshEnd = scheduleWhoosh(context);
+      window.setTimeout(() => closeAudio(context), Math.ceil(Math.max(1.15, whooshEnd + 0.1) * 1000));
       return true;
     } catch {
       closeAudio(context);
@@ -129,6 +163,7 @@
       if (soundEnabled && !autoplayBlocked && !soundPending) {
         soundEnabled = false;
         soundAttempt++;
+        closeAudio(introContext);
         try {
           window.localStorage.removeItem(soundPreferenceKey);
         } catch {

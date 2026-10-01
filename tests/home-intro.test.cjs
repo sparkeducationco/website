@@ -24,7 +24,7 @@ test("intro has sixteen independent rays that launch outward as the backdrop fad
 
 function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
     navigationType = "navigate", entering = false, introduced = false, storageBlocked = false,
-    soundEnabled = false, audioMode = "unsupported" } = {}) {
+    soundEnabled = false, audioMode = "unsupported", animationTime = 0 } = {}) {
     class Events {
         constructor() { this.listeners = new Map(); }
         addEventListener(type, callback) {
@@ -46,7 +46,10 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
     const soundAttributes = new Map();
     soundButton.querySelector = () => soundLabel;
     soundButton.setAttribute = (key, value) => soundAttributes.set(key, value);
-    document.querySelector = () => soundButton;
+    document.querySelector = (selector) => selector === ".home-intro-ray" ? {
+        getAnimations: () => [{ animationName: "spark-intro-ray", currentTime: animationTime,
+            effect: { getTiming: () => ({ duration: 1800 }) } }],
+    } : soundButton;
     document.hidden = hidden;
     document.documentElement = { classList: {
         add: (name) => classes.add(name), remove: (name) => classes.delete(name),
@@ -77,8 +80,10 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
             constructor() {
                 this.state = "suspended";
                 this.currentTime = 0;
+                this.sampleRate = 22050;
                 this.sourcesStarted = 0;
                 this.sourcesAtResume = [];
+                this.noiseSources = [];
                 audioContexts.push(this);
             }
             resume() {
@@ -99,6 +104,22 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
                     frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
                     connect() {}, stop() {}, start: () => { this.sourcesStarted++; },
                 };
+            }
+            createBuffer(channels, length) {
+                const data = new Float32Array(length);
+                return { getChannelData: () => data };
+            }
+            createBiquadFilter() {
+                return { frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+                    Q: { value: 0 }, connect() {} };
+            }
+            createBufferSource() {
+                const source = { connect() {},
+                    start: (time) => { source.startTime = time; this.sourcesStarted++; },
+                    stop: (time) => { source.stopTime = time; },
+                };
+                this.noiseSources.push(source);
+                return source;
             }
         };
     }
@@ -272,4 +293,36 @@ test("scroll restoration on reload preserves the intro until the visitor interac
     assert.ok(h.classes.has("spark-home-intro"));
     h.document.dispatch("wheel");
     assert.equal(h.classes.has("spark-home-intro"), false);
+});
+
+test("the whoosh starts with the radial ray launch and ends with the curtain", async () => {
+    const h = harness({ soundEnabled: true, audioMode: "allowed" });
+    h.document.dispatch("DOMContentLoaded");
+    await flushAudio();
+    const noise = h.audioContexts[0].noiseSources[0];
+    assert.ok(Math.abs(noise.startTime - 0.864) < 0.0001);
+    assert.ok(Math.abs(noise.stopTime - 1.8) < 0.0001);
+    assert.ok([...h.timers.values()].some((timer) => timer.duration >= 1900));
+});
+
+test("enabling sound late plays only the remaining whoosh instead of delaying it past the intro", async () => {
+    const h = harness({ audioMode: "allowed", animationTime: 1200 });
+    h.document.dispatch("DOMContentLoaded");
+    h.tapSound();
+    await flushAudio();
+    const noise = h.audioContexts[0].noiseSources[0];
+    assert.equal(noise.startTime, 0);
+    assert.ok(Math.abs(noise.stopTime - 0.6) < 0.0001);
+});
+
+test("muting or dismissing the intro cancels its scheduled whoosh", async () => {
+    for (const dismiss of ["mute", "wheel"]) {
+        const h = harness({ soundEnabled: true, audioMode: "allowed" });
+        h.document.dispatch("DOMContentLoaded");
+        await flushAudio();
+        assert.equal(h.audioContexts[0].noiseSources.length, 1);
+        if (dismiss === "mute") h.tapSound();
+        else h.document.dispatch("wheel");
+        assert.equal(h.audioContexts[0].state, "closed");
+    }
 });
