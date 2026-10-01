@@ -2,11 +2,12 @@
   const root = document.documentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const navigation = window.performance?.getEntriesByType?.("navigation")?.[0];
-  if (reducedMotion.matches || document.hidden || window.location.hash || window.scrollY > 80 ||
+  const isReload = navigation?.type === "reload";
+  if (reducedMotion.matches || document.hidden || (!isReload && (window.location.hash || window.scrollY > 80)) ||
       navigation?.type === "back_forward" || root.classList.contains("spark-page-entering")) return;
 
   try {
-    if (window.sessionStorage.getItem("spark-home-introduced")) return;
+    if (!isReload && window.sessionStorage.getItem("spark-home-introduced")) return;
     window.sessionStorage.setItem("spark-home-introduced", "1");
   } catch {
     // A decorative entrance must still work without access to storage.
@@ -14,24 +15,24 @@
 
   let timeout = null;
   let headerTimeout = null;
-  const soundPreferenceKey = "spark-home-intro-sound";
+  const soundPreferenceKey = "spark-site-sound-enabled";
   let soundEnabled = false;
   let autoplayBlocked = false;
+  let soundPending = false;
+  let soundAttempt = 0;
+  let introContext = null;
+  const closeAudio = (context) => {
+    if (context && context.state !== "closed") context.close().catch(() => {});
+  };
   const playIntroSound = async () => {
     const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextConstructor) return false;
 
     let context;
     try {
+      closeAudio(introContext);
       context = new AudioContextConstructor();
-      await Promise.race([
-        context.resume(),
-        new Promise((resolve) => window.setTimeout(resolve, 500)),
-      ]);
-      if (context.state !== "running") {
-        await context.close();
-        return false;
-      }
+      introContext = context;
       const start = context.currentTime;
       [
         { from: 392, to: 587, delay: 0, level: 0.045 },
@@ -51,10 +52,19 @@
         oscillator.start(noteStart);
         oscillator.stop(noteStart + 0.9);
       });
-      window.setTimeout(() => context.close(), 1400);
+      // Starting a source can unlock an opted-in context on a later visit in Chromium.
+      await Promise.race([
+        context.resume(),
+        new Promise((resolve) => window.setTimeout(resolve, 500)),
+      ]);
+      if (context.state !== "running") {
+        closeAudio(context);
+        return false;
+      }
+      window.setTimeout(() => closeAudio(context), 1400);
       return true;
     } catch {
-      context?.close();
+      closeAudio(context);
       return false;
     }
   };
@@ -64,7 +74,10 @@
   };
   root.classList.add("spark-home-intro");
   const finish = (interrupted = false) => {
-    if (interrupted) clearHeaderReveal();
+    if (interrupted) {
+      clearHeaderReveal();
+      closeAudio(introContext);
+    }
     if (!root.classList.contains("spark-home-intro")) return;
     root.classList.remove("spark-home-intro");
     window.clearTimeout(timeout);
@@ -91,23 +104,31 @@
     const updateSoundButton = () => {
       if (!soundButton || !soundLabel) return;
       soundButton.setAttribute("aria-pressed", String(soundEnabled));
-      soundLabel.textContent = !soundEnabled ? "Sound off" : autoplayBlocked ? "Tap for sound" : "Sound on";
+      soundLabel.textContent = !soundEnabled ? "Sound off" : (autoplayBlocked || soundPending) ? "Tap for sound" : "Sound on";
       soundButton.setAttribute(
         "aria-label",
-        !soundEnabled ? "Enable intro sound" : autoplayBlocked ? "Play intro sound" : "Turn intro sound off",
+        !soundEnabled ? "Enable intro sound" : (autoplayBlocked || soundPending) ? "Play intro sound" : "Turn intro sound off",
       );
+    };
+    const startSound = async () => {
+      const attempt = ++soundAttempt;
+      soundPending = true;
+      updateSoundButton();
+      const played = await playIntroSound();
+      if (attempt !== soundAttempt) return;
+      soundPending = false;
+      autoplayBlocked = !played;
+      updateSoundButton();
     };
     updateSoundButton();
     if (soundEnabled && root.classList.contains("spark-home-intro")) {
-      playIntroSound().then((played) => {
-        autoplayBlocked = !played;
-        updateSoundButton();
-      });
+      startSound();
     }
     soundButton?.addEventListener("click", async () => {
       if (!root.classList.contains("spark-home-intro")) return;
-      if (soundEnabled && !autoplayBlocked) {
+      if (soundEnabled && !autoplayBlocked && !soundPending) {
         soundEnabled = false;
+        soundAttempt++;
         try {
           window.localStorage.removeItem(soundPreferenceKey);
         } catch {
@@ -121,8 +142,9 @@
         } catch {
           // The choice still applies for this intro if storage is unavailable.
         }
-        autoplayBlocked = !(await playIntroSound());
+        startSound();
       }
+      window.dispatchEvent(new CustomEvent("spark:sound-change", { detail: { enabled: soundEnabled } }));
       updateSoundButton();
     });
   }, { once: true });
@@ -141,10 +163,10 @@
   });
   window.addEventListener("pagehide", () => finish(true));
   window.addEventListener("pageshow", (event) => {
-    if (event.persisted || window.scrollY > 80) finish(true);
+    if (event.persisted || (!isReload && window.scrollY > 80)) finish(true);
   });
   window.addEventListener("scroll", () => {
-    if (window.scrollY > 80) finish(true);
+    if (!isReload && window.scrollY > 80) finish(true);
   }, { passive: true });
   reducedMotion.addEventListener("change", () => {
     if (reducedMotion.matches) finish(true);
