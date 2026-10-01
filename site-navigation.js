@@ -125,6 +125,7 @@
     clearEntry();
     pending = { url, started: false };
     root.classList.add("spark-page-leaving");
+    window.sparkSound?.play("page-sweep");
     // Also navigate if animation events are unavailable or a stylesheet fails.
     exitTimer = window.setTimeout(navigate, 450);
   });

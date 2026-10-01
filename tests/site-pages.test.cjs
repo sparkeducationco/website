@@ -33,7 +33,7 @@ test("all routes share navigation, local motion assets and semantic page landmar
     assert.deepEqual(tags(html, "script").map((tag) => tag.src.split("?")[0]), [
       "/site-navigation.js",
       ...(!page ? ["/home-intro.js"] : []),
-      "/script.js", "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
+      "/script.js", "/site-sound.js", "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
     ], `${page}: common scripts execute in dependency order`);
     for (const script of tags(html, "script").filter((tag) => !["/site-navigation.js", "/home-intro.js"].includes(tag.src.split("?")[0]))) assert.ok("defer" in script);
     assert.ok(html.indexOf('/site-navigation.js') < html.indexOf('</head>'), "entry initialization precedes first paint");
@@ -50,6 +50,24 @@ test("all routes share navigation, local motion assets and semantic page landmar
       assert.ok(Number(image.width) > 0 && Number(image.height) > 0);
     }
   }
+});
+
+test("every route keeps one sound control outside the navigation and page transition containers", () => {
+  for (const page of pages) {
+    const html = htmlFor(page);
+    const controls = tags(html, "button").filter(tag => tag.class === "site-sound-toggle");
+    assert.equal(controls.length, 1, `${page || "home"}: one persistent sound control`);
+    assert.equal(controls[0].type, "button");
+    assert.equal(controls[0]["aria-pressed"], "false");
+    assert.ok(!html.match(/<header\b[\s\S]*?<\/header>/)[0].includes("site-sound-toggle"));
+    assert.match(html, /<\/header>\s*<button class="site-sound-toggle"/);
+    assert.match(html, /class="site-sound-label" aria-hidden="true">Sound off/);
+  }
+  const css = read("site.css");
+  assert.match(css, /\.site-sound-toggle\s*\{[^}]*position:\s*fixed/);
+  assert.match(css, /\.site-sound-toggle\s*\{[^}]*bottom:\s*max\(16px, env\(safe-area-inset-bottom\)\)/);
+  assert.match(css, /\.site-sound-toggle\s*\{[^}]*min-height:\s*44px/);
+  assert.match(css, /@media print\s*\{\s*\.site-sound-toggle \{ display: none; \}/);
 });
 
 test("interior Home buttons navigate to the homepage route while Home on the homepage scrolls", () => {

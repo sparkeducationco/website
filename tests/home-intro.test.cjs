@@ -5,6 +5,7 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 const source = fs.readFileSync(path.join(__dirname, "../home-intro.js"), "utf8");
+const soundSource = fs.readFileSync(path.join(__dirname, "../site-sound.js"), "utf8");
 
 test("intro has sixteen independent rays that launch outward as the backdrop fades", () => {
     const html = fs.readFileSync(path.join(__dirname, "../index.html"), "utf8");
@@ -24,7 +25,7 @@ test("intro has sixteen independent rays that launch outward as the backdrop fad
 
 function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
     navigationType = "navigate", entering = false, introduced = false, storageBlocked = false,
-    soundEnabled = false, audioMode = "unsupported", animationTime = 0 } = {}) {
+    soundEnabled = false, audioMode = "unsupported", animationTime = 0, savedPreference = null } = {}) {
     class Events {
         constructor() { this.listeners = new Map(); }
         addEventListener(type, callback) {
@@ -42,14 +43,12 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
     const classes = new Set(entering ? ["spark-page-entering"] : []);
     const document = new Events();
     const soundButton = new Events();
-    const soundLabel = { textContent: "Sound off" };
     const soundAttributes = new Map();
-    soundButton.querySelector = () => soundLabel;
     soundButton.setAttribute = (key, value) => soundAttributes.set(key, value);
     document.querySelector = (selector) => selector === ".home-intro-ray" ? {
         getAnimations: () => [{ animationName: "spark-intro-ray", currentTime: animationTime,
             effect: { getTiming: () => ({ duration: 1800 }) } }],
-    } : soundButton;
+    } : selector === ".site-sound-toggle" ? soundButton : null;
     document.hidden = hidden;
     document.documentElement = { classList: {
         add: (name) => classes.add(name), remove: (name) => classes.delete(name),
@@ -67,7 +66,7 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
         getItem(key) { if (storageBlocked) throw new Error("Blocked"); return storage.get(key); },
         setItem(key, value) { if (storageBlocked) throw new Error("Blocked"); storage.set(key, value); },
     };
-    const localStorage = new Map(soundEnabled ? [["spark-site-sound-enabled", "enabled"]] : []);
+    const localStorage = savedPreference || new Map(soundEnabled ? [["spark-site-sound-enabled", "enabled"]] : []);
     window.localStorage = {
         getItem(key) { if (storageBlocked) throw new Error("Blocked"); return localStorage.get(key); },
         setItem(key, value) { if (storageBlocked) throw new Error("Blocked"); localStorage.set(key, value); },
@@ -128,15 +127,20 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
     window.clearTimeout = (id) => timers.delete(id);
     const completions = [];
     window.dispatchEvent = (event) => { completions.push(event); return window.dispatch(event.type, event); };
-    class CustomEvent { constructor(type, options) { this.type = type; this.detail = options.detail; } }
-    vm.runInNewContext(source, { window, document, CustomEvent });
+    class CustomEvent { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } }
+    class Element {}
+    const environment = vm.createContext({ window, document, CustomEvent, Element, Node: Element,
+        HTMLSelectElement: Element, performance: { now: () => 1000 } });
+    vm.runInContext(source, environment);
+    vm.runInContext(soundSource, environment);
     const tapSound = () => {
         userGesture = true;
+        document.dispatch("pointerdown");
         soundButton.dispatch("click");
         userGesture = false;
     };
     return { window, document, classes, timers, storage, preference, completions,
-        localStorage, soundButton, soundLabel, soundAttributes, audioContexts, tapSound };
+        localStorage, soundButton, soundAttributes, audioContexts, tapSound };
 }
 
 const flushAudio = () => new Promise((resolve) => setImmediate(resolve));
@@ -242,29 +246,37 @@ test("an opted-in reload schedules sources before resume so allowed autoplay can
     assert.equal(h.audioContexts.length, 1);
     assert.deepEqual(h.audioContexts[0].sourcesAtResume, [2]);
     assert.equal(h.audioContexts[0].state, "running");
-    assert.equal(h.soundLabel.textContent, "Sound on");
+    assert.equal(h.soundAttributes.get("aria-pressed"), "true");
     assert.equal(h.localStorage.get("spark-site-sound-enabled"), "enabled");
 });
 
-test("blocked reload audio keeps opt-in enabled and a tap starts a fresh context", async () => {
+test("blocked reload audio can be replayed from the persistent toggle after the curtain ends", async () => {
     const h = harness({ navigationType: "reload", introduced: true,
         soundEnabled: true, audioMode: "blocked" });
     h.document.dispatch("DOMContentLoaded");
     [...h.timers.values()].find((timer) => timer.duration === 500).callback();
     await flushAudio();
     assert.equal(h.audioContexts[0].state, "closed");
-    assert.equal(h.soundLabel.textContent, "Tap for sound");
     assert.equal(h.soundAttributes.get("aria-pressed"), "true");
+    assert.equal(h.audioContexts.length, 1);
+    assert.equal(h.localStorage.get("spark-site-sound-enabled"), "enabled");
+    assert.equal(h.soundAttributes.get("aria-label"), "Play introduction with sound");
+    assert.ok(h.classes.has("spark-home-intro"), "blocked audio does not delay or dismiss the animation");
+    h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
     h.tapSound();
     await flushAudio();
+    assert.equal(h.audioContexts.length, 2);
     assert.equal(h.audioContexts[1].state, "running");
-    assert.equal(h.soundLabel.textContent, "Sound on");
+    assert.equal(h.soundAttributes.get("aria-pressed"), "true");
+    assert.equal(h.soundAttributes.get("aria-label"), "Turn site sounds off");
     assert.equal(h.localStorage.get("spark-site-sound-enabled"), "enabled");
-    assert.equal(h.completions.at(-1).type, "spark:sound-change");
-    assert.equal(h.completions.at(-1).detail.enabled, true);
+    assert.ok(h.classes.has("spark-home-intro"), "sound and visuals restart together from the gesture");
+    h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+    h.tapSound();
+    assert.equal(h.window.sparkSound.enabled, false, "the toggle returns to normal muting after playback");
 });
 
-test("a tap while autoplay is pending unlocks sound instead of muting the saved setting", async () => {
+test("muting the shared setting while autoplay is pending cancels the intro audio", async () => {
     const h = harness({ navigationType: "reload", soundEnabled: true, audioMode: "blocked" });
     h.document.dispatch("DOMContentLoaded");
     const blockedTimer = [...h.timers.values()].find((timer) => timer.duration === 500);
@@ -273,9 +285,9 @@ test("a tap while autoplay is pending unlocks sound instead of muting the saved 
     blockedTimer.callback();
     await flushAudio();
     assert.equal(h.audioContexts[0].state, "closed");
-    assert.equal(h.audioContexts[1].state, "running");
-    assert.equal(h.soundLabel.textContent, "Sound on");
-    assert.equal(h.localStorage.get("spark-site-sound-enabled"), "enabled");
+    assert.equal(h.audioContexts.length, 1);
+    assert.equal(h.soundAttributes.get("aria-pressed"), "false");
+    assert.equal(h.localStorage.has("spark-site-sound-enabled"), false);
 });
 
 test("a muted reload creates no audio context", () => {
@@ -283,7 +295,7 @@ test("a muted reload creates no audio context", () => {
     h.document.dispatch("DOMContentLoaded");
     assert.ok(h.classes.has("spark-home-intro"));
     assert.equal(h.audioContexts.length, 0);
-    assert.equal(h.soundLabel.textContent, "Sound off");
+    assert.equal(h.soundAttributes.get("aria-pressed"), "false");
 });
 
 test("scroll restoration on reload preserves the intro until the visitor interacts", () => {
@@ -308,7 +320,7 @@ test("the whoosh starts with the radial ray launch and ends with the curtain", a
 test("enabling sound late plays only the remaining whoosh instead of delaying it past the intro", async () => {
     const h = harness({ audioMode: "allowed", animationTime: 1200 });
     h.document.dispatch("DOMContentLoaded");
-    h.tapSound();
+    h.window.dispatch("storage", { key: "spark-site-sound-enabled", newValue: "enabled" });
     await flushAudio();
     const noise = h.audioContexts[0].noiseSources[0];
     assert.equal(noise.startTime, 0);
@@ -324,5 +336,107 @@ test("muting or dismissing the intro cancels its scheduled whoosh", async () => 
         if (dismiss === "mute") h.tapSound();
         else h.document.dispatch("wheel");
         assert.equal(h.audioContexts[0].state, "closed");
+    }
+});
+
+test("the sticky bar remembers the startup preference on subsequent reloads", async () => {
+    const first = harness({ audioMode: "allowed" });
+    first.document.dispatch("DOMContentLoaded");
+    first.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+    first.tapSound();
+    await flushAudio();
+    assert.equal(first.window.sparkSound.enabled, true);
+    assert.ok(first.classes.has("spark-home-intro"));
+    assert.equal(first.audioContexts.at(-1).noiseSources.length, 1, "enabling sound replays the intro without a timed button");
+    const reload = harness({ navigationType: "reload", audioMode: "allowed", savedPreference: first.localStorage });
+    reload.document.dispatch("DOMContentLoaded");
+    await flushAudio();
+    assert.equal(reload.audioContexts[0].noiseSources.length, 1);
+    assert.equal(reload.soundAttributes.get("aria-pressed"), "true");
+    reload.tapSound();
+    const muted = harness({ navigationType: "reload", audioMode: "allowed", savedPreference: first.localStorage });
+    muted.document.dispatch("DOMContentLoaded");
+    await flushAudio();
+    assert.equal(muted.audioContexts.length, 0);
+    assert.equal(muted.soundAttributes.get("aria-pressed"), "false");
+});
+
+test("cross-tab muting stops the intro without changing the animation", async () => {
+    const h = harness({ soundEnabled: true, audioMode: "allowed" });
+    h.document.dispatch("DOMContentLoaded");
+    await flushAudio();
+    h.window.dispatch("storage", { key: "spark-site-sound-enabled", newValue: null });
+    assert.equal(h.audioContexts[0].state, "closed");
+    assert.equal(h.soundAttributes.get("aria-pressed"), "false");
+    assert.ok(h.classes.has("spark-home-intro"));
+});
+
+test("reduced motion skips startup audio even when site sounds are enabled", async () => {
+    const h = harness({ reduced: true, soundEnabled: true, audioMode: "allowed", navigationType: "reload" });
+    h.document.dispatch("DOMContentLoaded");
+    await flushAudio();
+    assert.equal(h.audioContexts.length, 0);
+    assert.equal(h.soundAttributes.get("aria-pressed"), "true");
+});
+
+test("sound remains synchronized when browser storage is unavailable", async () => {
+    const h = harness({ storageBlocked: true, audioMode: "allowed" });
+    h.document.dispatch("DOMContentLoaded");
+    h.tapSound();
+    await flushAudio();
+    assert.equal(h.window.sparkSound.enabled, true);
+    assert.equal(h.audioContexts[0].noiseSources.length, 1);
+    h.tapSound();
+    assert.equal(h.window.sparkSound.enabled, false);
+    assert.equal(h.audioContexts[0].state, "closed");
+});
+
+test("the homepage has only the persistent sound control, not a second intro button", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../index.html"), "utf8");
+    const css = fs.readFileSync(path.join(__dirname, "../site.css"), "utf8");
+    assert.equal([...html.matchAll(/class="site-sound-toggle"/g)].length, 1);
+    assert.ok(!html.includes("home-intro-sound"));
+    assert.ok(!css.includes("home-intro-sound"));
+});
+
+test("a blocked intro can be replayed after scrolling without a timed click", async () => {
+    const h = harness({ soundEnabled: true, audioMode: "blocked", navigationType: "reload" });
+    h.document.dispatch("DOMContentLoaded");
+    [...h.timers.values()].find(timer => timer.duration === 500).callback();
+    await flushAudio();
+    h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+    h.window.scrollY = 800;
+    h.tapSound();
+    await flushAudio();
+    assert.equal(h.audioContexts[1].state, "running");
+    assert.ok(h.classes.has("spark-home-intro"));
+    assert.equal(h.window.scrollY, 800, "replay does not change the reader's scroll position");
+});
+
+test("switching to reduced motion removes the blocked-audio replay action", async () => {
+    const h = harness({ soundEnabled: true, audioMode: "blocked", navigationType: "reload" });
+    h.document.dispatch("DOMContentLoaded");
+    [...h.timers.values()].find(timer => timer.duration === 500).callback();
+    await flushAudio();
+    h.preference.matches = true;
+    h.preference.dispatch("change");
+    assert.equal(h.soundAttributes.get("aria-label"), "Turn site sounds off");
+    h.tapSound();
+    assert.equal(h.window.sparkSound.enabled, false);
+    assert.equal(h.audioContexts.length, 1);
+    assert.ok(!h.classes.has("spark-home-intro"));
+});
+
+test("replaying an intro cannot interrupt document navigation or a hidden tab", async () => {
+    for (const suppress of [h => h.classes.add("spark-page-leaving"),
+        h => h.classes.add("spark-page-entering"), h => { h.document.hidden = true; }]) {
+        const h = harness({ soundEnabled: true, audioMode: "allowed" });
+        h.document.dispatch("DOMContentLoaded");
+        await flushAudio();
+        h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+        suppress(h);
+        h.window.dispatch("spark:home-intro-play");
+        assert.equal(h.audioContexts.length, 1);
+        assert.ok(!h.classes.has("spark-home-intro"));
     }
 });

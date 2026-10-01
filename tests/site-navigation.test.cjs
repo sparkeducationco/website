@@ -53,6 +53,8 @@ function harness({ href = "https://spark.test/", reduced = false, native = false
     let fontReady;
     if (waitFonts) document.fonts = { ready: { then(callback) { fontReady = callback; } } };
     const window = new Events();
+    const soundCalls = [];
+    window.sparkSound = { play: kind => soundCalls.push(kind) };
     const preference = new Events();
     preference.matches = reduced;
     window.matchMedia = () => preference;
@@ -112,7 +114,7 @@ function harness({ href = "https://spark.test/", reduced = false, native = false
     const click = (url, event = {}, attributes = {}) => document.dispatch("click", {
         target: new Element(new URL(url, href).href, attributes), ...event,
     });
-    return { window, document, main, fragment, classes, storage, destinations, timers, preference, advance, click, flushFrame, scrollCalls, fontsReady: () => fontReady?.() };
+    return { window, document, main, fragment, classes, storage, destinations, timers, preference, advance, click, flushFrame, scrollCalls, soundCalls, fontsReady: () => fontReady?.() };
 }
 
 test("cross-page FAQ entry positions its fragment before the slide starts", () => {
@@ -194,6 +196,7 @@ test("fallback slides out before navigating and carries the complete destination
     const h = harness();
     assert.equal(h.click("/privacy/?version=current#information").defaultPrevented, true);
     assert.ok(h.classes.has("spark-page-leaving"));
+    assert.deepEqual(h.soundCalls, ["page-sweep"]);
     h.advance(449);
     assert.equal(h.destinations.length, 0);
     h.advance(1);
@@ -211,6 +214,7 @@ test("rapid header clicks use the latest destination without restarting or dupli
     h.document.dispatch("animationend", { target: h.main, animationName: "spark-page-out" });
     h.advance(450);
     assert.deepEqual(h.destinations, ["https://spark.test/contact/"]);
+    assert.deepEqual(h.soundCalls, ["page-sweep"]);
 });
 
 test("Policy to Home has both an exit and matching incoming slide without a fragment", () => {
@@ -243,6 +247,7 @@ test("same-page sections, mail, external links and non-page endpoints remain bro
     h.advance(1000);
     assert.equal(h.destinations.length, 0);
     assert.equal(h.classes.size, 0);
+    assert.deepEqual(h.soundCalls, []);
 });
 
 test("modifier clicks, new tabs, downloads and handled clicks preserve normal semantics", () => {
@@ -251,6 +256,7 @@ test("modifier clicks, new tabs, downloads and handled clicks preserve normal se
         const h = harness();
         h.click("/contact/", event);
         assert.equal(h.classes.size, 0);
+        assert.deepEqual(h.soundCalls, []);
     }
     for (const attributes of [{ target: "_blank" }, { target: "preview" }, { download: "" }]) {
         const h = harness();
@@ -294,7 +300,17 @@ test("reduced motion and hidden destinations do not slide in", () => {
         const h = harness({ ...options, entry: { destination: "https://spark.test/", created: 49900 } });
         assert.equal(h.classes.size, 0);
     }
-    assert.equal(harness({ reduced: true }).click("/privacy/").defaultPrevented, false);
+    const reduced = harness({ reduced: true });
+    assert.equal(reduced.click("/privacy/").defaultPrevented, false);
+    assert.deepEqual(reduced.soundCalls, []);
+});
+
+test("navigation still slides when site sounds are unavailable", () => {
+    const h = harness();
+    delete h.window.sparkSound;
+    assert.equal(h.click("/contact/").defaultPrevented, true);
+    h.advance(450);
+    assert.deepEqual(h.destinations, ["https://spark.test/contact/"]);
 });
 
 test("changing to reduced motion completes a pending navigation without waiting", () => {

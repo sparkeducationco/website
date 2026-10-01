@@ -1,7 +1,10 @@
 (() => {
   const storageKey = "spark-site-sound-enabled";
   const toggle = document.querySelector(".site-sound-toggle");
-  const soundTargets = ".menu-toggle, .button, .nav-cta, .plan-link, summary, select, a[href], button:not(.site-sound-toggle):not(.home-intro-sound)";
+  const toggleLabel = toggle?.querySelector?.(".site-sound-label");
+  const root = document.documentElement;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const soundTargets = ".menu-toggle, .button, .nav-cta, .plan-link, summary, select, a[href], button:not(.site-sound-toggle)";
   const cues = {
     "cta-hover": [{ from: 784, to: 1047, delay: 0, duration: 0.13, level: 0.018 }],
     "cta-click": [
@@ -31,6 +34,62 @@
   let enabled = false;
   let context = null;
   let lastCueAt = 0;
+  let activeSweep = null;
+  let introBlocked = false;
+
+  const stopSweep = () => {
+    try { activeSweep?.stop(); } catch {}
+    activeSweep = null;
+  };
+  const schedulePageSweep = (audio) => {
+    if (!enabled || reducedMotion.matches || document.hidden || !root.classList.contains("spark-page-leaving")) return;
+    const animation = document.getElementById("main")?.getAnimations?.()
+      .find((effect) => effect.animationName === "spark-page-out");
+    const elapsed = Number(animation?.currentTime) || 0;
+    const duration = Math.min(0.42, (450 - elapsed) / 1000 - 0.015);
+    if (duration < 0.05) return;
+    stopSweep();
+    const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * duration), audio.sampleRate);
+    const samples = buffer.getChannelData(0);
+    let previous = 0;
+    for (let i = 0; i < samples.length; i++) {
+      previous = previous * 0.6 + (Math.random() * 2 - 1) * 0.4;
+      samples[i] = previous;
+    }
+    const noise = audio.createBufferSource();
+    const filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    const pan = audio.createStereoPanner?.();
+    const start = audio.currentTime;
+    noise.buffer = buffer;
+    filter.type = "bandpass";
+    filter.Q.value = 0.6;
+    filter.frequency.setValueAtTime(2200, start);
+    filter.frequency.exponentialRampToValueAtTime(420, start + duration);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.14, start + duration * 0.35);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    noise.connect(filter);
+    filter.connect(gain);
+    if (pan) {
+      pan.pan.setValueAtTime(0.7, start);
+      pan.pan.linearRampToValueAtTime(-0.8, start + duration);
+      gain.connect(pan);
+      pan.connect(audio.destination);
+    } else {
+      gain.connect(audio.destination);
+    }
+    activeSweep = noise;
+    noise.onended = () => {
+      if (activeSweep === noise) activeSweep = null;
+      noise.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+      pan?.disconnect();
+    };
+    noise.start(start);
+    noise.stop(start + duration);
+  };
 
   try {
     enabled = window.localStorage.getItem(storageKey) === "enabled";
@@ -45,21 +104,27 @@
 
   const updateToggle = () => {
     if (!toggle) return;
+    const label = enabled && introBlocked ? "Play introduction with sound" : enabled ? "Turn site sounds off" : "Turn site sounds on";
     toggle.setAttribute("aria-pressed", String(enabled));
-    toggle.setAttribute("aria-label", enabled ? "Turn site sounds off" : "Turn site sounds on");
-    toggle.title = enabled ? "Turn site sounds off" : "Turn site sounds on";
+    toggle.setAttribute("aria-label", label);
+    toggle.title = label;
+    if (toggleLabel) toggleLabel.textContent = enabled && introBlocked ? "Play intro" : enabled ? "Sound on" : "Sound off";
   };
 
   const playCue = async (kind = "navigation-click") => {
     if (!enabled) return;
     const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
     const notes = cues[kind];
-    if (!AudioContextConstructor || !notes) return;
+    if (!AudioContextConstructor || (!notes && kind !== "page-sweep")) return;
 
     try {
       context ||= new AudioContextConstructor();
       if (context.state !== "running") await context.resume();
       if (context.state !== "running") return;
+      if (kind === "page-sweep") {
+        schedulePageSweep(context);
+        return;
+      }
 
       const now = context.currentTime;
       notes.forEach(({ from, to, delay, duration, level }) => {
@@ -82,11 +147,26 @@
     }
   };
 
-  window.sparkSound = { play: playCue };
+  const announcePreference = () => {
+    window.dispatchEvent(new CustomEvent("spark:sound-change", { detail: { enabled } }));
+  };
+  window.sparkSound = {
+    play: playCue,
+    get enabled() { return enabled; },
+    setIntroBlocked(blocked) {
+      introBlocked = enabled && blocked;
+      updateToggle();
+    },
+  };
   updateToggle();
 
   toggle?.addEventListener("click", async () => {
+    if (enabled && introBlocked) {
+      window.dispatchEvent(new CustomEvent("spark:home-intro-play"));
+      return;
+    }
     enabled = !enabled;
+    introBlocked = false;
     try {
       if (enabled) window.localStorage.setItem(storageKey, "enabled");
       else window.localStorage.removeItem(storageKey);
@@ -94,7 +174,12 @@
       // The preference still applies until this page is closed.
     }
     updateToggle();
-    if (enabled) await playCue("control-click");
+    if (!enabled) stopSweep();
+    announcePreference();
+    if (enabled) {
+      window.dispatchEvent(new CustomEvent("spark:home-intro-play"));
+      if (!root.classList.contains("spark-home-intro")) await playCue("control-click");
+    }
   });
 
   const categoryFor = (target) => {
@@ -109,6 +194,7 @@
 
   document.addEventListener("pointerover", (event) => {
     if (!enabled || event.pointerType === "touch" || !(event.target instanceof Element)) return;
+    if (root.classList.contains("spark-page-leaving")) return;
     const target = event.target.closest(soundTargets);
     const relatedTarget = event.relatedTarget instanceof Node ? event.relatedTarget : null;
     if (!target || target.contains(relatedTarget)) return;
@@ -119,6 +205,7 @@
 
   document.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
+    if (root.classList.contains("spark-page-leaving")) return;
     const target = event.target.closest(soundTargets);
     if (!target || performance.now() - lastCueAt < 180) return;
     lastCueAt = performance.now();
@@ -144,10 +231,19 @@
   window.addEventListener("storage", (event) => {
     if (event.key !== storageKey) return;
     enabled = event.newValue === "enabled";
+    if (!enabled) introBlocked = false;
     updateToggle();
+    if (!enabled) stopSweep();
+    announcePreference();
   });
   window.addEventListener("spark:sound-change", (event) => {
     enabled = event.detail.enabled;
+    if (!enabled) introBlocked = false;
     updateToggle();
+    if (!enabled) stopSweep();
   });
+  reducedMotion.addEventListener("change", () => {
+    if (reducedMotion.matches) stopSweep();
+  });
+  window.addEventListener("pagehide", stopSweep);
 })();
