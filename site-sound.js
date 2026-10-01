@@ -19,10 +19,6 @@
     ],
     "navigation-hover": [{ from: 740, to: 587, delay: 0, duration: 0.11, level: 0.012 }],
     "navigation-click": [{ from: 523, to: 659, delay: 0, duration: 0.14, level: 0.022 }],
-    "nav-zip": [
-      { from: 280, to: 1400, delay: 0, duration: 0.28, glide: 0.11, attack: 0.009, hold: 0.095, type: "triangle", level: 0.035 },
-      { from: 560, to: 2800, delay: 0.005, duration: 0.24, glide: 0.1, attack: 0.007, hold: 0.075, type: "sine", level: 0.007 },
-    ],
     "disclosure-hover": [{ from: 493, to: 587, delay: 0, duration: 0.09, level: 0.012 }],
     "disclosure-open": [
       { from: 392, to: 523, delay: 0, duration: 0.17, level: 0.025 },
@@ -73,6 +69,46 @@
     for (const source of activeCues) {
       try { source.stop(); } catch {}
     }
+  };
+  const getScrollNoiseBuffer = (audio) => {
+    if (scrollNoiseBuffer) return scrollNoiseBuffer;
+    scrollNoiseBuffer = audio.createBuffer(1, audio.sampleRate * 2, audio.sampleRate);
+    const samples = scrollNoiseBuffer.getChannelData(0);
+    let previous = 0;
+    for (let i = 0; i < samples.length; i++) {
+      previous = previous * 0.35 + (Math.random() * 2 - 1) * 0.65;
+      samples[i] = previous;
+    }
+    return scrollNoiseBuffer;
+  };
+  const playZipRustle = (audio) => {
+    const duration = 0.3;
+    const start = audio.currentTime;
+    const source = audio.createBufferSource();
+    const highpass = audio.createBiquadFilter();
+    const lowpass = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    source.buffer = getScrollNoiseBuffer(audio);
+    highpass.type = "highpass";
+    highpass.Q.value = 0.5;
+    highpass.frequency.setValueAtTime(700, start);
+    lowpass.type = "lowpass";
+    lowpass.Q.value = 0.5;
+    lowpass.frequency.setValueAtTime(1800, start);
+    lowpass.frequency.exponentialRampToValueAtTime(4800, start + duration * 0.7);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.019, start + 0.028);
+    gain.gain.exponentialRampToValueAtTime(0.007, start + 0.082);
+    gain.gain.exponentialRampToValueAtTime(0.022, start + 0.142);
+    gain.gain.exponentialRampToValueAtTime(0.006, start + 0.22);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    source.connect(highpass);
+    highpass.connect(lowpass);
+    lowpass.connect(gain);
+    gain.connect(audio.destination);
+    trackCue(source, [highpass, lowpass, gain]);
+    source.start(start);
+    source.stop(start + duration);
   };
   const noiseCue = (audio, { duration, from, to, level, attack }) => {
     const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * duration), audio.sampleRate);
@@ -213,15 +249,7 @@
         rampSwish(activeSwish, scrollSwishLevel, 0.08);
       }
       if (!activeSwish) {
-        if (!scrollNoiseBuffer) {
-          scrollNoiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
-          const samples = scrollNoiseBuffer.getChannelData(0);
-          let previous = 0;
-          for (let i = 0; i < samples.length; i++) {
-            previous = previous * 0.35 + (Math.random() * 2 - 1) * 0.65;
-            samples[i] = previous;
-          }
-        }
+        getScrollNoiseBuffer(context);
         const source = context.createBufferSource();
         const highpass = context.createBiquadFilter();
         const lowpass = context.createBiquadFilter();
@@ -364,7 +392,7 @@
     if (!enabled || document.hidden) return;
     if (reducedMotion.matches && ["nav-zip", "contact-success"].includes(kind)) return;
     const notes = cues[kind];
-    if (!notes && !["page-sweep", "typing-key"].includes(kind)) return;
+    if (!notes && !["page-sweep", "typing-key", "nav-zip"].includes(kind)) return;
     const generation = cueGeneration;
 
     try {
@@ -376,6 +404,10 @@
       if (["nav-zip", "typing-key", "contact-success"].includes(kind) && root.classList.contains("spark-page-leaving")) return;
       if (kind === "page-sweep") {
         schedulePageSweep(context);
+        return;
+      }
+      if (kind === "nav-zip") {
+        playZipRustle(context);
         return;
       }
       if (kind === "typing-key") {

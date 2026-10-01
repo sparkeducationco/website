@@ -6,36 +6,43 @@ const vm = require("node:vm");
 
 const source = fs.readFileSync(path.join(__dirname, "../site-sound.js"), "utf8");
 
-test("sticky navigation plays a bright tonal zip even immediately after hovering", () => {
+test("sticky navigation plays a bright leaf-like rustle with the shared scrolling texture", () => {
     const h = harness({ leaving: false });
     const link = h.element("link", true);
     h.document.dispatch("pointerover", { target: link });
     assert.equal(h.contexts[0].oscillators.length, 1);
     h.click(link);
     const audio = h.contexts[0];
-    assert.equal(audio.sources.length, 0, "the zip is a pitched glide, not filtered noise");
-    assert.equal(audio.filters.length, 0);
-    assert.equal(audio.oscillators.length, 3, "one hover voice and two zip voices, without a generic click tone");
-    const [tone, overtone] = audio.oscillators.slice(1);
-    assert.equal(tone.type, "triangle");
-    assert.equal(overtone.type, "sine");
-    assert.deepEqual(tone.frequency.calls, [["set", 280, 10], ["exponential", 1400, 10.11]]);
-    assert.deepEqual(overtone.frequency.calls, [["set", 560, 10.005], ["exponential", 2800, 10.105]]);
-    assert.ok(Math.abs(tone.stops[0] - 10.29) < 0.00001);
-    assert.equal(audio.gains[1].gain.calls[1][1], 0.035);
-    tone.onended();
-    overtone.onended();
-    assert.ok(tone.disconnected && overtone.disconnected);
-    assert.ok(audio.gains.slice(1).every(gain => gain.disconnected));
+    assert.equal(audio.sources.length, 1, "the rustle reuses the scrolling noise texture");
+    assert.equal(audio.filters.length, 2);
+    assert.equal(audio.oscillators.length, 1, "only the earlier hover cue is tonal");
+    const rustle = audio.sources[0];
+    assert.equal(rustle.buffer.channels, 1);
+    assert.equal(rustle.buffer.data.length, audio.sampleRate * 2);
+    assert.ok(rustle.buffer.data.some(value => value !== 0));
+    assert.ok(rustle.buffer.data.every(value => Math.abs(value) <= 1));
+    assert.equal(audio.filters[0].type, "highpass");
+    assert.equal(audio.filters[1].type, "lowpass");
+    assert.deepEqual(audio.filters[0].frequency.calls, [["set", 700, 10]]);
+    assert.deepEqual(audio.filters[1].frequency.calls, [["set", 1800, 10], ["exponential", 4800, 10.21]]);
+    assert.deepEqual(audio.gains[1].gain.calls, [
+        ["set", 0.0001, 10], ["exponential", 0.019, 10.028], ["exponential", 0.007, 10.082],
+        ["exponential", 0.022, 10.142], ["exponential", 0.006, 10.22], ["exponential", 0.0001, 10.3],
+    ]);
+    assert.deepEqual(rustle.stops, [10.3]);
+    rustle.onended();
+    assert.ok(rustle.disconnected);
+    assert.ok(audio.filters.every(filter => filter.disconnected));
+    assert.ok(audio.gains[1].disconnected);
 });
 
 test("header CTA uses the zip while footer links keep their ordinary navigation sound", () => {
     const h = harness({ leaving: false });
     h.click(h.element("cta", true));
-    assert.equal(h.contexts[0].sources.length, 0);
-    assert.equal(h.contexts[0].oscillators.length, 2);
+    assert.equal(h.contexts[0].sources.length, 1);
+    assert.equal(h.contexts[0].oscillators.length, 0);
     h.click(h.element("link"));
-    assert.equal(h.contexts[0].oscillators.length, 3);
+    assert.equal(h.contexts[0].oscillators.length, 1);
 });
 
 test("page transitions keep the whoosh without layering the section zip over it", () => {
@@ -50,19 +57,18 @@ test("page transitions keep the whoosh without layering the section zip over it"
     assert.equal(h.contexts[0].oscillators.length, 0, "the tonal zip belongs to section jumps only");
 });
 
-test("the tonal zip rises quickly, has a crisp attack and leaves a short gentle tail", () => {
+test("the leaf-like zip ripples softly, brightens, and fades with the scroll sound envelope", () => {
     const h = harness({ leaving: false });
     h.click(h.element("link", true));
     const audio = h.contexts[0];
-    const tone = audio.oscillators[0];
-    const gain = audio.gains[0].gain;
-    assert.deepEqual(gain.calls[0], ["set", 0.0001, 10]);
-    assert.deepEqual(gain.calls[1], ["exponential", 0.035, 10.009]);
-    assert.deepEqual(gain.calls[2], ["exponential", 0.035 * 0.65, 10.095], "the tone keeps its energy through the glide");
-    assert.deepEqual(gain.calls.at(-1), ["exponential", 0.0001, 10.28]);
-    assert.ok(tone.frequency.calls[1][2] < gain.calls.at(-1)[2], "the glide ends before the fading tail");
-    assert.ok(audio.gains[1].gain.calls[1][1] < gain.calls[1][1] / 4, "the overtone brightens without overpowering");
-    assert.equal(audio.sources.length, 0);
+    const rustle = audio.sources[0];
+    assert.equal(audio.oscillators.length, 0);
+    assert.equal(rustle.buffer, audio.sources[0].buffer);
+    assert.deepEqual(audio.gains[0].gain.calls, [
+        ["set", 0.0001, 10], ["exponential", 0.019, 10.028], ["exponential", 0.007, 10.082],
+        ["exponential", 0.022, 10.142], ["exponential", 0.006, 10.22], ["exponential", 0.0001, 10.3],
+    ]);
+    assert.ok(audio.filters[1].frequency.calls[1][2] < rustle.stops[0], "brightness lifts before the soft fade");
 });
 
 test("modified, untrusted, prevented and non-primary header clicks never zip", () => {
