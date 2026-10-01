@@ -6,35 +6,252 @@ const vm = require("node:vm");
 
 const source = fs.readFileSync(path.join(__dirname, "../site-sound.js"), "utf8");
 
+test("sticky navigation plays a bright tonal zip even immediately after hovering", () => {
+    const h = harness({ leaving: false });
+    const link = h.element("link", true);
+    h.document.dispatch("pointerover", { target: link });
+    assert.equal(h.contexts[0].oscillators.length, 1);
+    h.click(link);
+    const audio = h.contexts[0];
+    assert.equal(audio.sources.length, 0, "the zip is a pitched glide, not filtered noise");
+    assert.equal(audio.filters.length, 0);
+    assert.equal(audio.oscillators.length, 3, "one hover voice and two zip voices, without a generic click tone");
+    const [tone, overtone] = audio.oscillators.slice(1);
+    assert.equal(tone.type, "triangle");
+    assert.equal(overtone.type, "sine");
+    assert.deepEqual(tone.frequency.calls, [["set", 280, 10], ["exponential", 1400, 10.11]]);
+    assert.deepEqual(overtone.frequency.calls, [["set", 560, 10.005], ["exponential", 2800, 10.105]]);
+    assert.ok(Math.abs(tone.stops[0] - 10.29) < 0.00001);
+    assert.equal(audio.gains[1].gain.calls[1][1], 0.035);
+    tone.onended();
+    overtone.onended();
+    assert.ok(tone.disconnected && overtone.disconnected);
+    assert.ok(audio.gains.slice(1).every(gain => gain.disconnected));
+});
+
+test("header CTA uses the zip while footer links keep their ordinary navigation sound", () => {
+    const h = harness({ leaving: false });
+    h.click(h.element("cta", true));
+    assert.equal(h.contexts[0].sources.length, 0);
+    assert.equal(h.contexts[0].oscillators.length, 2);
+    h.click(h.element("link"));
+    assert.equal(h.contexts[0].oscillators.length, 3);
+});
+
+test("page transitions keep the whoosh without layering the section zip over it", () => {
+    const h = harness({ leaving: false });
+    h.document.listeners.get("click").unshift({ capture: false, callback: () => {
+        h.classes.add("spark-page-leaving");
+        h.window.sparkSound.play("page-sweep");
+    } });
+    h.click(h.element("link", true));
+    assert.equal(h.contexts[0].sources.length, 1);
+    assert.equal(h.contexts[0].filters[0].frequency.calls[0][1], 2200);
+    assert.equal(h.contexts[0].oscillators.length, 0, "the tonal zip belongs to section jumps only");
+});
+
+test("the tonal zip rises quickly, has a crisp attack and leaves a short gentle tail", () => {
+    const h = harness({ leaving: false });
+    h.click(h.element("link", true));
+    const audio = h.contexts[0];
+    const tone = audio.oscillators[0];
+    const gain = audio.gains[0].gain;
+    assert.deepEqual(gain.calls[0], ["set", 0.0001, 10]);
+    assert.deepEqual(gain.calls[1], ["exponential", 0.035, 10.009]);
+    assert.deepEqual(gain.calls[2], ["exponential", 0.035 * 0.65, 10.095], "the tone keeps its energy through the glide");
+    assert.deepEqual(gain.calls.at(-1), ["exponential", 0.0001, 10.28]);
+    assert.ok(tone.frequency.calls[1][2] < gain.calls.at(-1)[2], "the glide ends before the fading tail");
+    assert.ok(audio.gains[1].gain.calls[1][1] < gain.calls[1][1] / 4, "the overtone brightens without overpowering");
+    assert.equal(audio.sources.length, 0);
+});
+
+test("modified, untrusted, prevented and non-primary header clicks never zip", () => {
+    for (const options of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true },
+        { altKey: true }, { button: 1 }, { defaultPrevented: true }, { isTrusted: false }]) {
+        const h = harness({ leaving: false });
+        h.click(h.element("link", true), options);
+        assert.equal(h.contexts.length, 0, JSON.stringify(options));
+    }
+});
+
+test("typing plays a short faint switch for text fields, deletion and line breaks", () => {
+    const h = harness({ leaving: false });
+    for (const [kind, inputType] of [["text", "insertText"], ["email", "deleteContentBackward"],
+        ["number", "deleteContentForward"], ["textarea", "insertLineBreak"]]) {
+        h.type(h.element(kind), { inputType });
+        h.advance(40);
+    }
+    const audio = h.contexts[0];
+    assert.equal(audio.sources.length, 4);
+    assert.equal(audio.oscillators.length, 0);
+    assert.equal(audio.gains[0].gain.calls[1][1], 0.008);
+    assert.ok(Math.abs(audio.sources[0].stops[0] - 10.025) < 0.00001);
+    assert.deepEqual(audio.filters[0].frequency.calls, [["set", 2800, 10], ["exponential", 1600, 10.025]]);
+});
+
+test("typing ignores paste, autofill, composing text, disabled fields and synthetic input", () => {
+    for (const options of [{ inputType: "insertFromPaste" }, { inputType: "insertReplacementText" },
+        { inputType: "insertFromDrop" }, { inputType: undefined }, { isComposing: true }, { isTrusted: false }]) {
+        const h = harness({ leaving: false });
+        h.type(h.element("text"), options);
+        assert.equal(h.contexts.length, 0, JSON.stringify(options));
+    }
+    for (const kind of ["select", "checkbox", "password", "button"]) {
+        const h = harness({ leaving: false });
+        h.type(h.element(kind));
+        assert.equal(h.contexts.length, 0, kind);
+    }
+    for (const attribute of ["disabled", "readOnly"]) {
+        const h = harness({ leaving: false });
+        const input = h.element("text");
+        input[attribute] = true;
+        h.type(input);
+        assert.equal(h.contexts.length, 0, attribute);
+    }
+});
+
+test("rapid typing is capped and suspended audio never replays stale keystrokes", async () => {
+    const h = harness({ leaving: false });
+    const input = h.element("text");
+    h.type(input);
+    h.advance(34);
+    h.type(input);
+    assert.equal(h.contexts[0].sources.length, 1);
+    h.advance(1);
+    h.type(input);
+    assert.equal(h.contexts[0].sources.length, 2);
+    const blocked = harness({ leaving: false, audioMode: "suspended" });
+    blocked.gesture("keydown");
+    blocked.type(blocked.element("text"));
+    blocked.advance(1000);
+    blocked.resume();
+    await Promise.resolve();
+    assert.equal(blocked.contexts[0].sources.length, 0);
+    blocked.type(blocked.element("text"));
+    assert.equal(blocked.contexts[0].sources.length, 1, "fresh typing works after unlocking audio");
+});
+
+test("confirmed contact success plays a short three-voice rising cheer for the actual form only", () => {
+    const h = harness({ leaving: false });
+    h.succeed({});
+    h.window.dispatch("spark:contact-success", {});
+    assert.equal(h.contexts.length, 0);
+    h.succeed();
+    const audio = h.contexts[0];
+    assert.equal(audio.oscillators.length, 3);
+    assert.equal(audio.sources.length, 0);
+    assert.deepEqual(audio.oscillators.map(voice => voice.frequency.calls[0][1]), [392, 523, 659]);
+    assert.ok(audio.oscillators.every(voice => voice.frequency.calls[1][1] > voice.frequency.calls[0][1]));
+    assert.ok(audio.oscillators.at(-1).stops[0] < 10.6);
+    audio.oscillators.forEach(voice => voice.onended());
+    assert.ok(audio.oscillators.every(voice => voice.disconnected));
+    assert.ok(audio.gains.every(gain => gain.disconnected));
+    const absent = harness({ leaving: false, contact: false });
+    absent.succeed();
+    assert.equal(absent.contexts.length, 0);
+});
+
+test("mute, hidden pages and leaving routes suppress all new feedback", () => {
+    for (const options of [{ enabled: false }, { hidden: true }, { leaving: true }, { audioMode: "unsupported" }]) {
+        const h = harness({ leaving: false, ...options });
+        h.click(h.element("link", true));
+        h.type(h.element("text"));
+        h.succeed();
+        assert.equal(h.contexts.flatMap(audio => [...audio.sources, ...audio.oscillators]).length, 0, JSON.stringify(options));
+    }
+});
+
+test("reduced motion suppresses animation cues but can retain the quiet typing sound", () => {
+    const h = harness({ leaving: false, reduced: true });
+    h.click(h.element("link", true));
+    h.succeed();
+    assert.equal(h.contexts.length, 0);
+    h.type(h.element("textarea"));
+    assert.equal(h.contexts[0].sources.length, 1);
+});
+
+test("mute, hiding, pagehide and reduced motion release every active feedback voice", () => {
+    for (const cancel of [h => h.toggle.dispatch("click"),
+        h => h.window.dispatch("storage", { key: "spark-site-sound-enabled", newValue: null }),
+        h => h.window.dispatch("spark:sound-change", { detail: { enabled: false } }),
+        h => { h.document.hidden = true; h.document.dispatch("visibilitychange"); },
+        h => { h.preference.matches = true; h.preference.dispatch("change"); },
+        h => h.window.dispatch("pagehide")]) {
+        const h = harness({ leaving: false });
+        h.click(h.element("link", true));
+        h.type(h.element("text"));
+        h.succeed();
+        cancel(h);
+        const audio = h.contexts[0];
+        for (const voice of [...audio.sources, ...audio.oscillators]) {
+            assert.equal(voice.stops.at(-1), undefined);
+            assert.ok(voice.disconnected);
+        }
+        assert.ok([...audio.filters, ...audio.gains].every(node => node.disconnected));
+    }
+});
+
+test("late permission cannot play feedback after cancellation or starting navigation", async () => {
+    for (const trigger of [h => h.click(h.element("link", true)), h => h.succeed()]) {
+        for (const cancel of [h => h.window.dispatch("pagehide"),
+            h => { h.classes.add("spark-page-leaving"); },
+            h => { h.toggle.dispatch("click"); h.toggle.dispatch("click"); },
+            h => { h.document.hidden = true; h.document.dispatch("visibilitychange"); h.document.hidden = false; }]) {
+            const h = harness({ leaving: false, audioMode: "suspended" });
+            trigger(h);
+            cancel(h);
+            h.resume();
+            await Promise.resolve();
+            assert.equal(h.contexts[0].sources.length, 0);
+            assert.ok(h.contexts[0].oscillators.every(voice => voice.frequency.calls[0][1] === 587),
+                "only an intentional sound-toggle confirmation is allowed");
+        }
+    }
+});
+
 function harness({ enabled = true, reduced = false, hidden = false, leaving = true,
     elapsed = 0, panning = true, audioMode = "running", animations = true,
-    scrollY = 200, scrollHeight = 2000, viewportHeight = 800 } = {}) {
+    scrollY = 200, scrollHeight = 2000, viewportHeight = 800, contact = true } = {}) {
     class Events {
         constructor() { this.listeners = new Map(); }
-        addEventListener(type, callback) {
+        addEventListener(type, callback, options = {}) {
             const list = this.listeners.get(type) || [];
-            list.push(callback);
+            list.push({ callback, capture: options.capture === true });
             this.listeners.set(type, list);
         }
         dispatch(type, event = {}) {
-            for (const callback of this.listeners.get(type) || []) callback(event);
+            const list = this.listeners.get(type) || [];
+            for (const { callback } of [...list.filter(listener => listener.capture), ...list.filter(listener => !listener.capture)]) callback(event);
         }
     }
     class Element {
+        constructor(kind = "menu", header = false) { this.kind = kind; this.header = header; }
         closest(selector) {
+            if (selector === ".site-header a[href]") return this.header ? this : null;
+            if (selector === ".site-sound-toggle") return null;
             if (/input|textarea|contenteditable/.test(selector)) return this.editable ? this : null;
+            if (selector === ".menu-toggle") return this.kind === "menu" ? this : null;
+            if (selector === ".button, .nav-cta, .plan-link") return this.kind === "cta" ? this : null;
+            if (selector === "summary") return this.kind === "disclosure" ? this : null;
+            if (selector === "select") return this.kind === "select" ? this : null;
+            if (selector === "a[href]") return this.kind === "link" ? this : null;
+            if (selector === "button") return this.kind === "button" ? this : null;
             return this;
         }
+        matches() { return ["text", "email", "number", "textarea"].includes(this.kind); }
+        getAttribute() { return "false"; }
         contains() { return false; }
     }
     const classes = new Set(leaving ? ["spark-page-leaving"] : []);
     const document = new Events();
     const toggle = new Events();
+    const form = new Events();
     const label = { textContent: "Sound off" };
     toggle.querySelector = () => label;
     const attributes = new Map();
     toggle.setAttribute = (key, value) => attributes.set(key, value);
-    document.querySelector = () => toggle;
+    document.querySelector = selector => selector === ".site-sound-toggle" ? toggle :
+        selector === "[data-contact-form]" && contact ? form : null;
     document.hidden = hidden;
     document.documentElement = { scrollHeight, clientHeight: viewportHeight,
         classList: { contains: name => classes.has(name) } };
@@ -161,7 +378,7 @@ function harness({ enabled = true, reduced = false, hidden = false, leaving = tr
         isTrusted: true, deltaY: 30, deltaX: 0, target: new Element(), ...options,
     });
     const scroll = position => { window.scrollY = position; window.dispatch("scroll"); };
-    return { window, document, toggle, label, attributes, storage, preference, contexts, classes, animation,
+    return { window, document, toggle, form, label, attributes, storage, preference, contexts, classes, animation,
         timers, advance, rootChanged: () => observers.forEach(callback => callback()),
         wheel, scroll, inputScroll: position => { wheel(); scroll(position); },
         gesture: (type = "pointerdown", options = {}) => {
@@ -170,6 +387,10 @@ function harness({ enabled = true, reduced = false, hidden = false, leaving = tr
             userGesture = false;
         },
         resume: () => pendingResumes.splice(0).forEach(resolve => resolve()),
+        element: (kind, header = false) => new Element(kind, header),
+        click: (target, options = {}) => document.dispatch("click", { target, isTrusted: true, button: 0, ...options }),
+        type: (target, options = {}) => form.dispatch("input", { target, isTrusted: true, inputType: "insertText", ...options }),
+        succeed: (actualForm = form) => window.dispatch("spark:contact-success", { detail: { form: actualForm } }),
         target: new Element(), play: () => window.sparkSound.play("page-sweep") };
 }
 

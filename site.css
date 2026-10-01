@@ -281,6 +281,9 @@ a, button, summary { touch-action: manipulation; }
 
 .button-spark-layer { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; contain: strict; }
 .button-spark { position: absolute; border-radius: 2px; background: #f7df48; box-shadow: 0 0 0 1px #75621470, 0 0 7px #f7df4880; pointer-events: none; }
+.contact-confetti-layer { position: fixed; inset: 0; z-index: 80; pointer-events: none; overflow: hidden; contain: strict; }
+.contact-confetti { position: absolute; border-radius: 1px; pointer-events: none; }
+@media (prefers-reduced-motion: reduce), print { .contact-confetti-layer { display: none; } }
 
 @media (max-width: 700px) {
   .editorial-doodle { margin-top: 22px; }

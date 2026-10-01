@@ -14,6 +14,7 @@ if (contactForm) {
   const submitButton = contactForm.querySelector('button[type="submit"]');
   contactForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (submitButton.disabled) return;
     submitButton.disabled = true;
     status.textContent = "Sending your request…";
     status.className = "form-status";
@@ -24,11 +25,16 @@ if (contactForm) {
         body: JSON.stringify(Object.fromEntries(new FormData(contactForm))),
       });
       const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error || "Unable to send your request.");
+      if (!response.ok || result?.ok !== true)
+        throw new Error(result?.error || "Unable to send your request.");
       contactForm.reset();
       status.textContent = "Thanks—we’ll be in touch shortly.";
       status.classList.add("is-success");
+      try {
+        window.dispatchEvent(new CustomEvent("spark:contact-success", { detail: { form: contactForm } }));
+      } catch {
+        // Decorative feedback must never turn an accepted request into an error.
+      }
     } catch (error) {
       status.textContent =
         error.message || "Something went wrong. Please email us directly.";

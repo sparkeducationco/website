@@ -2,6 +2,7 @@
   const storageKey = "spark-site-sound-enabled";
   const toggle = document.querySelector(".site-sound-toggle");
   const toggleLabel = toggle?.querySelector?.(".site-sound-label");
+  const contactForm = document.querySelector("[data-contact-form]");
   const root = document.documentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const scrollSwishLevel = 0.0045;
@@ -18,6 +19,10 @@
     ],
     "navigation-hover": [{ from: 740, to: 587, delay: 0, duration: 0.11, level: 0.012 }],
     "navigation-click": [{ from: 523, to: 659, delay: 0, duration: 0.14, level: 0.022 }],
+    "nav-zip": [
+      { from: 280, to: 1400, delay: 0, duration: 0.28, glide: 0.11, attack: 0.009, hold: 0.095, type: "triangle", level: 0.035 },
+      { from: 560, to: 2800, delay: 0.005, duration: 0.24, glide: 0.1, attack: 0.007, hold: 0.075, type: "sine", level: 0.007 },
+    ],
     "disclosure-hover": [{ from: 493, to: 587, delay: 0, duration: 0.09, level: 0.012 }],
     "disclosure-open": [
       { from: 392, to: 523, delay: 0, duration: 0.17, level: 0.025 },
@@ -34,6 +39,11 @@
     "menu-close": [{ from: 698, to: 440, delay: 0, duration: 0.16, level: 0.02 }],
     "selection-change": [{ from: 587, to: 880, delay: 0, duration: 0.14, level: 0.021 }],
     "control-click": [{ from: 587, to: 784, delay: 0, duration: 0.12, level: 0.025 }],
+    "contact-success": [
+      { from: 392, to: 523, delay: 0, duration: 0.4, level: 0.021 },
+      { from: 523, to: 659, delay: 0.09, duration: 0.4, level: 0.016 },
+      { from: 659, to: 1047, delay: 0.18, duration: 0.4, level: 0.013 },
+    ],
   };
   let enabled = false;
   let context = null;
@@ -47,6 +57,46 @@
   let lastScrollY = window.scrollY;
   let lastScrollAt = performance.now();
   let scrollInputActive = false;
+  let lastTypingAt = -Infinity;
+  let cueGeneration = 0;
+  const activeCues = new Set();
+
+  const trackCue = (source, nodes) => {
+    activeCues.add(source);
+    source.onended = () => {
+      activeCues.delete(source);
+      for (const node of [source, ...nodes]) node.disconnect();
+    };
+  };
+  const stopCues = () => {
+    cueGeneration++;
+    for (const source of activeCues) {
+      try { source.stop(); } catch {}
+    }
+  };
+  const noiseCue = (audio, { duration, from, to, level, attack }) => {
+    const buffer = audio.createBuffer(1, Math.ceil(audio.sampleRate * duration), audio.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    const source = audio.createBufferSource();
+    const filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    const start = audio.currentTime;
+    source.buffer = buffer;
+    filter.type = "bandpass";
+    filter.Q.value = 0.7;
+    filter.frequency.setValueAtTime(from, start);
+    filter.frequency.exponentialRampToValueAtTime(to, start + duration);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(level, start + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(audio.destination);
+    trackCue(source, [filter, gain]);
+    source.start(start);
+    source.stop(start + duration);
+  };
 
   const getAudioContext = () => {
     const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
@@ -206,9 +256,38 @@
     }
   };
 
-  const stopSweep = () => {
+ const stopSweep = () => {
     try { activeSweep?.stop(); } catch {}
     activeSweep = null;
+  };
+  const scheduleTones = (audio, notes, scale = 1, directional = false) => {
+    const now = audio.currentTime;
+    return notes.map(({ from, to, delay, duration, level, type = "sine", glide = duration * 0.78, attack = 0.018, hold = 0 }) => {
+      const start = now + delay * scale;
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+      const pan = directional ? audio.createStereoPanner?.() : null;
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(from, start);
+      oscillator.frequency.exponentialRampToValueAtTime(to, start + glide * scale);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(level, start + attack * scale);
+      if (hold > attack) gain.gain.exponentialRampToValueAtTime(level * 0.65, start + hold * scale);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration * scale);
+      oscillator.connect(gain);
+      if (pan) {
+        pan.pan.setValueAtTime(0.7, start);
+        pan.pan.linearRampToValueAtTime(-0.8, start + duration * scale);
+        gain.connect(pan);
+        pan.connect(audio.destination);
+      } else {
+        gain.connect(audio.destination);
+      }
+      trackCue(oscillator, pan ? [gain, pan] : [gain]);
+      oscillator.start(start);
+      oscillator.stop(start + (duration + 0.01) * scale);
+      return oscillator;
+    });
   };
   const schedulePageSweep = (audio) => {
     if (!enabled || reducedMotion.matches || document.hidden || !root.classList.contains("spark-page-leaving")) return;
@@ -282,35 +361,29 @@
 
   const playCue = async (kind = "navigation-click") => {
     if (kind === "page-sweep") stopSwish();
-    if (!enabled) return;
+    if (!enabled || document.hidden) return;
+    if (reducedMotion.matches && ["nav-zip", "contact-success"].includes(kind)) return;
     const notes = cues[kind];
-    if (!notes && kind !== "page-sweep") return;
+    if (!notes && !["page-sweep", "typing-key"].includes(kind)) return;
+    const generation = cueGeneration;
 
     try {
       if (!getAudioContext()) return;
+      if (kind === "typing-key" && context.state !== "running") return;
       if (context.state !== "running") await context.resume();
-      if (context.state !== "running") return;
+      if (context.state !== "running" || !enabled || document.hidden || generation !== cueGeneration) return;
+      if (reducedMotion.matches && ["nav-zip", "contact-success"].includes(kind)) return;
+      if (["nav-zip", "typing-key", "contact-success"].includes(kind) && root.classList.contains("spark-page-leaving")) return;
       if (kind === "page-sweep") {
         schedulePageSweep(context);
         return;
       }
+      if (kind === "typing-key") {
+        noiseCue(context, { duration: 0.025, from: 2800, to: 1600, level: 0.008, attack: 0.002 });
+        return;
+      }
 
-      const now = context.currentTime;
-      notes.forEach(({ from, to, delay, duration, level }) => {
-        const start = now + delay;
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(from, start);
-        oscillator.frequency.exponentialRampToValueAtTime(to, start + duration * 0.78);
-        gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(level, start + 0.018);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start(start);
-        oscillator.stop(start + duration + 0.01);
-      });
+      scheduleTones(context, notes);
     } catch {
       // A blocked or unavailable audio context must never affect site interactions.
     }
@@ -347,6 +420,7 @@
     if (!enabled) {
       stopSweep();
       stopSwish();
+      stopCues();
     } else {
       prepareAudio();
     }
@@ -379,9 +453,18 @@
   }, { passive: true });
 
   document.addEventListener("click", (event) => {
+    if (!event.isTrusted || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey ||
+        event.shiftKey || event.altKey || !(event.target instanceof Element)) return;
+    if (root.classList.contains("spark-page-leaving")) return;
+    const link = event.target.closest(".site-header a[href]");
+    if (link) playCue("nav-zip");
+  }, { passive: true });
+
+  document.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
     if (root.classList.contains("spark-page-leaving")) return;
     const target = event.target.closest(soundTargets);
+    if (target?.closest(".site-header a[href]")) return;
     if (!target || performance.now() - lastCueAt < 180) return;
     lastCueAt = performance.now();
     const category = categoryFor(target);
@@ -401,6 +484,22 @@
 
   document.addEventListener("change", (event) => {
     if (enabled && event.target instanceof HTMLSelectElement) playCue("selection-change");
+  });
+  contactForm?.addEventListener("input", (event) => {
+    if (!event.isTrusted || event.isComposing || !(event.target instanceof Element)) return;
+    if (!event.target.matches("input:not([type]), input[type='text'], input[type='email'], input[type='number'], textarea") ||
+        event.target.readOnly || event.target.disabled) return;
+    if (!["insertText", "insertCompositionText", "insertFromComposition", "deleteContentBackward", "deleteContentForward", "insertLineBreak"].includes(event.inputType)) return;
+    const now = performance.now();
+    if (now - lastTypingAt < 35) return;
+    lastTypingAt = now;
+    playCue("typing-key");
+  }, { passive: true });
+  window.addEventListener("spark:contact-success", (event) => {
+    if (contactForm && event.detail?.form === contactForm && !root.classList.contains("spark-page-leaving")) {
+      stopSwish();
+      playCue("contact-success");
+    }
   });
 
   for (const type of ["pointerdown", "touchstart", "keydown", "wheel"]) {
@@ -440,7 +539,10 @@
       .observe(root, { attributes: true, attributeFilter: ["class"] });
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopSwish();
+    if (document.hidden) {
+      stopSwish();
+      stopCues();
+    }
   });
 
   window.addEventListener("storage", (event) => {
@@ -451,6 +553,7 @@
     if (!enabled) {
       stopSweep();
       stopSwish();
+      stopCues();
     }
     announcePreference();
   });
@@ -461,17 +564,20 @@
     if (!enabled) {
       stopSweep();
       stopSwish();
+      stopCues();
     }
   });
   reducedMotion.addEventListener("change", () => {
     if (reducedMotion.matches) {
       stopSweep();
       stopSwish();
+      stopCues();
     }
   });
   window.addEventListener("pagehide", () => {
     stopSweep();
     stopSwish();
+    stopCues();
   });
   window.addEventListener("pageshow", () => {
     stopSwish();

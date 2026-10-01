@@ -33,7 +33,8 @@ test("all routes share navigation, local motion assets and semantic page landmar
     assert.deepEqual(tags(html, "script").map((tag) => tag.src.split("?")[0]), [
       "/site-navigation.js",
       ...(!page ? ["/home-intro.js"] : []),
-      "/script.js", "/site-sound.js", "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
+      "/script.js", "/site-sound.js", ...(page === "contact" ? ["/contact-feedback.js"] : []),
+      "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
     ], `${page}: common scripts execute in dependency order`);
     for (const script of tags(html, "script").filter((tag) => !["/site-navigation.js", "/home-intro.js"].includes(tag.src.split("?")[0]))) assert.ok("defer" in script);
     assert.ok(html.indexOf('/site-navigation.js') < html.indexOf('</head>'), "entry initialization precedes first paint");
@@ -186,7 +187,7 @@ test("contact form preserves required field names, types, options and accessible
   assert.equal(tags(form, "button").filter((tag) => tag.type === "submit").length, 1);
 });
 
-function contactHarness(response = { ok: true, data: { ok: true } }) {
+function contactHarness(response = { ok: true, data: { ok: true } }, { pending = false, feedbackFails = false } = {}) {
   const listeners = new Map();
   const statusClasses = new Set();
   const status = { textContent: "", className: "form-status", classList: { add: (value) => statusClasses.add(value) } };
@@ -199,17 +200,32 @@ function contactHarness(response = { ok: true, data: { ok: true } }) {
     reset() { this.resets++; },
   };
   const calls = [];
+  const events = [];
+  let release;
+  const wait = pending ? new Promise(resolve => { release = resolve; }) : Promise.resolve();
   const context = vm.createContext({
     document: { querySelector: (selector) => selector === "[data-contact-form]" ? form : null },
     FormData: class { constructor(actualForm) { assert.equal(actualForm, form); } *[Symbol.iterator]() { yield* Object.entries(values); } },
     fetch: async (url, options) => {
       calls.push({ url, options });
       assert.equal(button.disabled, true, "submit disabled while sending");
-      return { ok: response.ok, json: async () => response.data };
+      await wait;
+      if (response.networkError) throw new Error("Network unavailable.");
+      return { ok: response.ok, json: async () => {
+        if (response.malformed) throw new SyntaxError("Invalid JSON.");
+        return response.data;
+      } };
     },
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
+    window: { dispatchEvent(event) {
+      if (feedbackFails) throw new Error("Feedback unavailable.");
+      assert.equal(form.resets, 1, "celebration occurs after resetting the accepted form");
+      assert.ok(statusClasses.has("is-success"), "success is announced before decorative feedback");
+      events.push(event);
+    } },
   });
   vm.runInContext(read("script.js"), context, { filename: "script.js" });
-  return { form, values, status, statusClasses, button, calls, listeners };
+  return { form, values, status, statusClasses, button, calls, listeners, events, release };
 }
 
 test("contact client still submits the five-field JSON contract and reports success", async () => {
@@ -225,6 +241,9 @@ test("contact client still submits the five-field JSON contract and reports succ
   assert.equal(h.form.resets, 1);
   assert.ok(h.statusClasses.has("is-success"));
   assert.equal(h.button.disabled, false);
+  assert.equal(h.events.length, 1);
+  assert.equal(h.events[0].type, "spark:contact-success");
+  assert.equal(h.events[0].detail.form, h.form);
 });
 
 test("contact client preserves entered data on API failure and re-enables submission", async () => {
@@ -233,6 +252,45 @@ test("contact client preserves entered data on API failure and re-enables submis
   assert.equal(h.form.resets, 0);
   assert.equal(h.status.textContent, "Please try again.");
   assert.ok(h.statusClasses.has("is-error"));
+  assert.equal(h.button.disabled, false);
+  assert.equal(h.events.length, 0);
+});
+
+test("contact client never celebrates rejected, incomplete, malformed or failed requests", async () => {
+  for (const response of [{ ok: true, data: { ok: false } }, { ok: true, data: {} },
+    { ok: true, data: null }, { ok: false, data: { ok: true } },
+    { ok: true, malformed: true }, { networkError: true }]) {
+    const h = contactHarness(response);
+    await h.listeners.get("submit")({ preventDefault() {} });
+    assert.equal(h.events.length, 0);
+    assert.equal(h.form.resets, 0);
+    assert.ok(h.statusClasses.has("is-error"));
+    assert.equal(h.button.disabled, false);
+  }
+});
+
+test("repeated submits while sending produce one request and one celebration", async () => {
+  const h = contactHarness(undefined, { pending: true });
+  const first = h.listeners.get("submit")({ preventDefault() {} });
+  await h.listeners.get("submit")({ preventDefault() {} });
+  assert.equal(h.calls.length, 1);
+  assert.equal(h.events.length, 0);
+  assert.equal(h.form.resets, 0);
+  assert.equal(h.button.disabled, true);
+  h.release();
+  await first;
+  assert.equal(h.events.length, 1);
+  assert.equal(h.form.resets, 1);
+  assert.equal(h.button.disabled, false);
+});
+
+test("unavailable decorative feedback never reports an accepted email as a failure", async () => {
+  const h = contactHarness(undefined, { feedbackFails: true });
+  await h.listeners.get("submit")({ preventDefault() {} });
+  assert.equal(h.form.resets, 1);
+  assert.ok(h.statusClasses.has("is-success"));
+  assert.ok(!h.statusClasses.has("is-error"));
+  assert.equal(h.status.textContent, "Thanks—we’ll be in touch shortly.");
   assert.equal(h.button.disabled, false);
 });
 
