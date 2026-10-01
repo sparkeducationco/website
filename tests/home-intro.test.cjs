@@ -50,7 +50,7 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
             effect: { getTiming: () => ({ duration: 1800 }) } }],
     } : selector === ".site-sound-toggle" ? soundButton : null;
     document.hidden = hidden;
-    document.documentElement = { classList: {
+    document.documentElement = { scrollHeight: 3000, clientHeight: 800, classList: {
         add: (name) => classes.add(name), remove: (name) => classes.delete(name),
         contains: (name) => classes.has(name),
     } };
@@ -96,12 +96,13 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
             }
             close() { this.state = "closed"; return Promise.resolve(); }
             createGain() {
-                return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {} };
+                return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {},
+                    cancelScheduledValues() {}, linearRampToValueAtTime() {} }, connect() {}, disconnect() {} };
             }
             createOscillator() {
                 return {
                     frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
-                    connect() {}, stop() {}, start: () => { this.sourcesStarted++; },
+                    connect() {}, disconnect() {}, stop() {}, start: () => { this.sourcesStarted++; },
                 };
             }
             createBuffer(channels, length) {
@@ -109,11 +110,11 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
                 return { getChannelData: () => data };
             }
             createBiquadFilter() {
-                return { frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
-                    Q: { value: 0 }, connect() {} };
+                return { frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {}, setTargetAtTime() {} },
+                    Q: { value: 0 }, connect() {}, disconnect() {} };
             }
             createBufferSource() {
-                const source = { connect() {},
+                const source = { connect() {}, disconnect() {},
                     start: (time) => { source.startTime = time; this.sourcesStarted++; },
                     stop: (time) => { source.stopTime = time; },
                 };
@@ -135,7 +136,7 @@ function harness({ reduced = false, hidden = false, hash = "", scrollY = 0,
     vm.runInContext(soundSource, environment);
     const tapSound = () => {
         userGesture = true;
-        document.dispatch("pointerdown");
+        document.dispatch("pointerdown", { target: soundButton, isTrusted: true });
         soundButton.dispatch("click");
         userGesture = false;
     };
@@ -265,8 +266,11 @@ test("blocked reload audio can be replayed from the persistent toggle after the 
     h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
     h.tapSound();
     await flushAudio();
-    assert.equal(h.audioContexts.length, 2);
+    assert.equal(h.audioContexts.length, 3);
     assert.equal(h.audioContexts[1].state, "running");
+    assert.equal(h.audioContexts[1].sourcesStarted, 0, "the shared context is silently unlocked by the tap");
+    assert.equal(h.audioContexts[2].state, "running");
+    assert.equal(h.audioContexts[2].noiseSources.length, 1);
     assert.equal(h.soundAttributes.get("aria-pressed"), "true");
     assert.equal(h.soundAttributes.get("aria-label"), "Turn site sounds off");
     assert.equal(h.localStorage.get("spark-site-sound-enabled"), "enabled");
@@ -274,6 +278,25 @@ test("blocked reload audio can be replayed from the persistent toggle after the 
     h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
     h.tapSound();
     assert.equal(h.window.sparkSound.enabled, false, "the toggle returns to normal muting after playback");
+});
+
+test("enabling intro sound also prepares scroll audio through the same trusted tap", async () => {
+    const h = harness({ audioMode: "blocked" });
+    h.document.dispatch("DOMContentLoaded");
+    h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+    h.tapSound();
+    await flushAudio();
+    assert.equal(h.audioContexts.length, 2);
+    const shared = h.audioContexts[0];
+    assert.equal(shared.state, "running");
+    assert.equal(shared.sourcesStarted, 0);
+    assert.equal(h.audioContexts[1].noiseSources.length, 1);
+    h.document.dispatch("animationend", { animationName: "spark-intro-curtain" });
+    h.document.dispatch("wheel", { isTrusted: true, deltaY: 30, deltaX: 0 });
+    h.window.scrollY = 100;
+    h.window.dispatch("scroll");
+    assert.equal(shared.sourcesStarted, 1, "scrolling uses the already-unlocked shared context");
+    assert.equal(h.audioContexts.length, 2, "scrolling does not create another context");
 });
 
 test("muting the shared setting while autoplay is pending cancels the intro audio", async () => {
@@ -385,10 +408,10 @@ test("sound remains synchronized when browser storage is unavailable", async () 
     h.tapSound();
     await flushAudio();
     assert.equal(h.window.sparkSound.enabled, true);
-    assert.equal(h.audioContexts[0].noiseSources.length, 1);
+    assert.equal(h.audioContexts.at(-1).noiseSources.length, 1);
     h.tapSound();
     assert.equal(h.window.sparkSound.enabled, false);
-    assert.equal(h.audioContexts[0].state, "closed");
+    assert.equal(h.audioContexts.at(-1).state, "closed");
 });
 
 test("the homepage has only the persistent sound control, not a second intro button", () => {
@@ -408,7 +431,7 @@ test("a blocked intro can be replayed after scrolling without a timed click", as
     h.window.scrollY = 800;
     h.tapSound();
     await flushAudio();
-    assert.equal(h.audioContexts[1].state, "running");
+    assert.equal(h.audioContexts.at(-1).state, "running");
     assert.ok(h.classes.has("spark-home-intro"));
     assert.equal(h.window.scrollY, 800, "replay does not change the reader's scroll position");
 });
