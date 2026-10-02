@@ -2,7 +2,15 @@
   const root = document.documentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const storageKey = "spark-page-entry";
-  const routes = new Set(["/", "/about/", "/contact/", "/privacy/", "/terms/"]);
+  const routes = new Set([
+    "/",
+    "/about/",
+    "/contact/",
+    "/privacy/",
+    "/terms/",
+    "/chromebook-filtering/",
+    "/proxy-bypass-detection/",
+  ]);
   const route = (pathname) => pathname.endsWith("/") ? pathname : `${pathname}/`;
   let pending = null;
   let exitTimer = null;
