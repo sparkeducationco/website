@@ -2,6 +2,8 @@
   const root = document.documentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const desktopPointer = window.matchMedia("(min-width: 960px) and (hover: hover) and (pointer: fine)");
+  const smoothScrollToggle = document.querySelector(".site-smooth-toggle");
+  const smoothScrollStorageKey = "spark-smooth-scroll-enabled";
   const artwork = document.querySelector(".poster-illustration, .inner-hero-art");
   const aperture = document.querySelector(".aperture-art");
   const animations = new Set();
@@ -14,6 +16,22 @@
   let inFrame = false;
   let suspended = document.hidden;
   let introPlayed = false;
+  let smoothScrollEnabled = true;
+  try {
+    smoothScrollEnabled = window.localStorage.getItem(smoothScrollStorageKey) !== "disabled";
+  } catch {
+    // Smooth scrolling stays enabled until the visitor changes this page's setting.
+  }
+
+  const updateSmoothScrollToggle = () => {
+    if (!smoothScrollToggle) return;
+    const label = smoothScrollEnabled ? "Turn smooth scrolling off" : "Turn smooth scrolling on";
+    smoothScrollToggle.setAttribute("aria-pressed", String(smoothScrollEnabled));
+    smoothScrollToggle.setAttribute("aria-label", label);
+    smoothScrollToggle.title = label;
+    const toggleLabel = smoothScrollToggle.querySelector(".site-smooth-label");
+    if (toggleLabel) toggleLabel.textContent = smoothScrollEnabled ? "Smooth on" : "Smooth off";
+  };
 
   const animate = (element, keyframes, options = {}) => {
     if (!element || reducedMotion.matches || root.classList.contains("spark-page-entering") ||
@@ -146,7 +164,7 @@
   };
 
   const syncMotion = () => {
-    const enabled = !suspended && !reducedMotion.matches && desktopPointer.matches;
+    const enabled = smoothScrollEnabled && !suspended && !reducedMotion.matches && desktopPointer.matches;
     if (enabled && !scroller && typeof window.Lenis === "function") {
       root.classList.add("spark-smooth");
       scroller = new window.Lenis({
@@ -301,6 +319,23 @@
   });
   reducedMotion.addEventListener("change", syncMotion);
   desktopPointer.addEventListener("change", syncMotion);
+  smoothScrollToggle?.addEventListener("click", () => {
+    smoothScrollEnabled = !smoothScrollEnabled;
+    try {
+      window.localStorage.setItem(smoothScrollStorageKey, smoothScrollEnabled ? "enabled" : "disabled");
+    } catch {
+      // The setting still applies until this page is closed.
+    }
+    updateSmoothScrollToggle();
+    syncMotion();
+  });
+  window.addEventListener("storage", (event) => {
+    if (event.key !== smoothScrollStorageKey) return;
+    smoothScrollEnabled = event.newValue !== "disabled";
+    updateSmoothScrollToggle();
+    syncMotion();
+  });
+  updateSmoothScrollToggle();
   syncMotion();
   if (root.classList.contains("spark-page-entering")) settlePageEntrance();
   playIntro();
