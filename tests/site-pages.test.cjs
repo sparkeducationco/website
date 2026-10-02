@@ -30,13 +30,13 @@ test("all routes share navigation, local motion assets and semantic page landmar
     assert.equal(menu.type, "button");
     assert.equal(menu["aria-controls"], "primary-nav");
     assert.equal(menu["aria-expanded"], "false");
-    assert.deepEqual(tags(html, "script").map((tag) => tag.src.split("?")[0]), [
+    assert.deepEqual(tags(html, "script").filter((tag) => tag.src).map((tag) => tag.src.split("?")[0]), [
       "/site-navigation.js",
       ...(!page ? ["/home-intro.js"] : []),
       "/script.js", "/site-sound.js", ...(page === "contact" ? ["/contact-feedback.js"] : []),
       "/site.js", "/button-sparks.js", "/assets/vendor/lenis-1.3.26.min.js", "/site-motion.js",
     ], `${page}: common scripts execute in dependency order`);
-    for (const script of tags(html, "script").filter((tag) => !["/site-navigation.js", "/home-intro.js"].includes(tag.src.split("?")[0]))) assert.ok("defer" in script);
+    for (const script of tags(html, "script").filter((tag) => tag.src && !["/site-navigation.js", "/home-intro.js"].includes(tag.src.split("?")[0]))) assert.ok("defer" in script);
     assert.ok(html.indexOf('/site-navigation.js') < html.indexOf('</head>'), "entry initialization precedes first paint");
     const styles = tags(html, "link").filter((tag) => tag.rel === "stylesheet").map((tag) => tag.href);
     assert.deepEqual(styles, page ? ["/site.css?v=20261002-smooth-scroll-toggle", "/pages.css?v=20260930-inner-doodles"] : ["/site.css?v=20261002-smooth-scroll-toggle"]);
